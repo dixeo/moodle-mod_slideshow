@@ -76,3 +76,59 @@ function slideshow_get_editor_options($context) {
         'trusttext' => 0,
     ];
 }
+
+/**
+ * Normalise slide HTML so unmatched closing tags cannot break ancestors (slideshow wrapper, watermark, controls).
+ *
+ * Parsed inside a single synthetic root; libxml repairs typical editor/paste damage (for example stray closing div tags).
+ * Does not change Moodle's trust model relative to format_text with noclean — content is still author-supplied.
+ *
+ * @param string $html HTML fragment (e.g. output of format_text).
+ * @param int $slideid Slide row id (used for a stable wrapper id while parsing).
+ * @return string Normalised HTML, or original string if parsing fails.
+ */
+function slideshow_balance_slide_html(string $html, int $slideid): string {
+    if (trim($html) === '') {
+        return $html;
+    }
+
+    $wrapperid = 'slideshow-slide-frag-' . $slideid;
+    $wrapped = '<div id="' . $wrapperid . '">' . $html . '</div>';
+
+    $doc = new \DOMDocument();
+    $useerrors = libxml_use_internal_errors(true);
+    libxml_clear_errors();
+    // Repair fragment; suppress libxml warnings for malformed legacy content.
+    @$doc->loadHTML(
+        '<?xml encoding="UTF-8"?>' . $wrapped,
+        LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+    );
+    libxml_clear_errors();
+    libxml_use_internal_errors($useerrors);
+
+    $root = $doc->getElementById($wrapperid);
+    if ($root === null) {
+        $doc2 = new \DOMDocument();
+        $useerrors = libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        @$doc2->loadHTML('<?xml encoding="UTF-8"?>' . $wrapped);
+        libxml_clear_errors();
+        libxml_use_internal_errors($useerrors);
+        $xpath = new \DOMXPath($doc2);
+        $nodes = $xpath->query('//*[@id="' . $wrapperid . '"]');
+        if ($nodes !== false && $nodes->length > 0) {
+            $root = $nodes->item(0);
+            $doc = $doc2;
+        }
+    }
+
+    if ($root === null) {
+        return $html;
+    }
+
+    $out = '';
+    foreach ($root->childNodes as $child) {
+        $out .= $doc->saveHTML($child);
+    }
+    return $out;
+}

@@ -107,6 +107,7 @@ if ($slides) {
         $formatoptions->overflowdiv = true;
         $formatoptions->context = $context;
         $content = format_text($content, $slide->contentformat, $formatoptions);
+        $content = slideshow_balance_slide_html($content, (int) $slide->id);
 
         $classes = 'slide no-overflow';
         if (!$firstslide) {
