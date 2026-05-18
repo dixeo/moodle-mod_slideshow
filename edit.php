@@ -30,12 +30,8 @@ $cmid = required_param('cm', PARAM_INT);
 $slideid = optional_param('id', 0, PARAM_INT);
 
 $pluginmanager = \core_plugin_manager::instance();
-$localcontenteditor = $pluginmanager->get_plugin_info('local_edai_course_editor');
-// Future Dixeo editor migration: also resolve local_dixeo_editor via the plugin manager when replacing Edai.
-if ($slideid && $localcontenteditor) {
-    // Plugin is available, you can use it.
-    // Future Dixeo editor migration: redirect to local/dixeo_editor/content_edition.php with cmid and itemid (slide id).
-    redirect(new moodle_url('/local/edai_course_editor/content_edition.php', ['cmid' => $cmid, 'slideid' => $slideid]));
+if ($slideid && $pluginmanager->get_plugin_info('local_dixeo_editor')) {
+    redirect(new moodle_url('/local/dixeo_editor/content_edition.php', ['cmid' => $cmid, 'slideid' => $slideid]));
 }
 
 // Check the course module exists.
