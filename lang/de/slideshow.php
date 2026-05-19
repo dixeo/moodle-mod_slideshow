@@ -22,6 +22,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 $string['addnew'] = 'Neue Folie hinzufügen';
+$string['addnewslide'] = 'Neue Folie';
 $string['confirm'] = 'Löschen';
 $string['content'] = 'Folieninhalt';
 $string['contentheader'] = 'Inhalt';
@@ -30,7 +31,10 @@ $string['decrease'] = 'Text verkleinern';
 $string['delete'] = 'Folie löschen';
 $string['deleteconfirm'] = 'Möchten Sie diese Folie wirklich löschen?';
 $string['edit'] = 'Folie bearbeiten';
+$string['errorcontainernotfound'] = 'Slideshow-Container nicht gefunden.';
 $string['fullscreen'] = 'Vollbild';
+$string['fullscreenexitnotsupported'] = 'Beenden des Vollbildmodus wird von Ihrem Browser nicht unterstützt.';
+$string['fullscreennotsupported'] = 'Der Vollbildmodus wird von Ihrem Browser nicht unterstützt.';
 $string['hide'] = 'Folie ausblenden';
 $string['increase'] = 'Text vergrößern';
 $string['modulename'] = 'Slideshow';
@@ -39,6 +43,7 @@ $string['modulename_link'] = 'mod/slideshow/view';
 $string['modulenameplural'] = 'Slideshows';
 $string['next'] = 'Nächste Folie';
 $string['noslides'] = 'Diese Slideshow ist leer.';
+$string['slideslistnotitle'] = 'Unbenannte Folie';
 $string['noslides_teacherhint'] = 'Fügen Sie eine neue Folie hinzu, um Inhalte hier anzuzeigen.';
 $string['pluginadministration'] = 'Slideshow-Modul-Administration';
 $string['pluginname'] = 'Slideshow';

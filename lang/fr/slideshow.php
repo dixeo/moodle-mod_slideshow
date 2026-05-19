@@ -22,6 +22,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 $string['addnew'] = 'Ajouter une nouvelle diapositive';
+$string['addnewslide'] = 'Nouvelle diapositive';
 $string['confirm'] = 'Supprimer';
 $string['content'] = 'Contenu de la diapositive';
 $string['contentheader'] = 'Contenu';
@@ -30,7 +31,10 @@ $string['decrease'] = 'Réduire la taille du texte';
 $string['delete'] = 'Supprimer la diapositive';
 $string['deleteconfirm'] = 'Êtes-vous sûr de vouloir supprimer cette diapositive ?';
 $string['edit'] = 'Modifier la diapositive';
+$string['errorcontainernotfound'] = 'Conteneur du diaporama introuvable.';
 $string['fullscreen'] = 'Plein écran';
+$string['fullscreenexitnotsupported'] = 'La sortie du plein écran n\'est pas prise en charge par votre navigateur.';
+$string['fullscreennotsupported'] = 'Le mode plein écran n\'est pas pris en charge par votre navigateur.';
 $string['hide'] = 'Masquer la diapositive';
 $string['increase'] = 'Augmenter la taille du texte';
 $string['modulename'] = 'Diaporama';
@@ -39,6 +43,7 @@ $string['modulename_link'] = 'mod/slideshow/view';
 $string['modulenameplural'] = 'Diaporamas';
 $string['next'] = 'Diapositive suivante';
 $string['noslides'] = 'Ce diaporama est vide.';
+$string['slideslistnotitle'] = 'Diapositive sans titre';
 $string['noslides_teacherhint'] = 'Ajoutez une nouvelle diapositive pour afficher du contenu ici.';
 $string['pluginadministration'] = 'Administration du module Diaporama';
 $string['pluginname'] = 'Diaporama';

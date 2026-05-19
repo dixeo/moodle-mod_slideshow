@@ -107,14 +107,12 @@ if ($mform->is_cancelled()) {
 
     redirect($returnurl);
 } else {
-    $fullmodulename = get_string('modulename', $module->name);
-    $pageheading = $pagetitle = get_string('addinganew', 'moodle', $fullmodulename);
-    $PAGE->navbar->add($pageheading);
-
     if ($slideid) {
         $pageheading = $pagetitle = get_string('edit', $module->name);
-        $PAGE->navbar->add($pageheading);
+    } else {
+        $pageheading = $pagetitle = get_string('addnewslide', 'mod_slideshow');
     }
+    $PAGE->navbar->add($pageheading);
 
     $PAGE->set_heading($course->fullname);
     $pagetitle = $pagetitle . moodle_page::TITLE_SEPARATOR . $module->name;

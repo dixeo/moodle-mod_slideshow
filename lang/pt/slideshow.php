@@ -22,6 +22,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 $string['addnew'] = 'Adicionar novo diapositivo';
+$string['addnewslide'] = 'Novo diapositivo';
 $string['confirm'] = 'Eliminar';
 $string['content'] = 'Conteúdo do diapositivo';
 $string['contentheader'] = 'Conteúdo';
@@ -30,7 +31,10 @@ $string['decrease'] = 'Diminuir texto';
 $string['delete'] = 'Eliminar diapositivo';
 $string['deleteconfirm'] = 'Tem a certeza de que deseja eliminar este diapositivo?';
 $string['edit'] = 'Editar diapositivo';
+$string['errorcontainernotfound'] = 'Contentor da apresentação não encontrado.';
 $string['fullscreen'] = 'Ecrã inteiro';
+$string['fullscreenexitnotsupported'] = 'O seu navegador não suporta sair do modo de ecrã inteiro.';
+$string['fullscreennotsupported'] = 'O seu navegador não suporta o modo de ecrã inteiro.';
 $string['hide'] = 'Ocultar diapositivo';
 $string['increase'] = 'Aumentar texto';
 $string['modulename'] = 'Apresentação de diapositivos';
@@ -39,6 +43,7 @@ $string['modulename_link'] = 'mod/slideshow/view';
 $string['modulenameplural'] = 'Apresentações de diapositivos';
 $string['next'] = 'Diapositivo seguinte';
 $string['noslides'] = 'Esta apresentação está vazia.';
+$string['slideslistnotitle'] = 'Diapositivo sem título';
 $string['noslides_teacherhint'] = 'Adicione um novo slide para mostrar conteúdo aqui.';
 $string['pluginadministration'] = 'Administração do módulo de apresentação';
 $string['pluginname'] = 'Apresentação de diapositivos';

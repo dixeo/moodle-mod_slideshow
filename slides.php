@@ -23,6 +23,7 @@
  */
 
 require('../../config.php');
+require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
 
 $id      = optional_param('id', 0, PARAM_INT); // Course module id.
 $p       = optional_param('p', 0, PARAM_INT);  // Slideshow instance id.
@@ -72,7 +73,7 @@ $displayindex = 1;
 foreach ($slides as $slide) {
     $data->slides[] = [
         'id' => $slide->id,
-        'name' => substr(strip_tags(strtok($slide->content, "\n")), 0, 255),
+        'name' => slideshow_get_slide_list_name($slide),
         'slideshow' => $slide->slideshow,
         'sortorder' => $slide->sortorder,
         'index' => $displayindex,

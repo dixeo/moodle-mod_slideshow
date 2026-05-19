@@ -77,6 +77,98 @@ function slideshow_get_editor_options($context) {
     ];
 }
 
+/** @var int Default max length for slide titles on the slides management list. */
+define('SLIDESHOW_SLIDE_LIST_LABEL_MAX', 80);
+
+/**
+ * Label for one slide on the slides management list (slides.php).
+ *
+ * Prefers the stored slide name (set by the slide form or AI generation), then the
+ * first heading in the HTML content, then a short plain-text excerpt.
+ *
+ * @param stdClass $slide slideshow_slide row (name, content).
+ * @param int $maxlength Maximum characters (multibyte-safe).
+ * @return string Plain-text label for display.
+ */
+function slideshow_get_slide_list_name(stdClass $slide, int $maxlength = SLIDESHOW_SLIDE_LIST_LABEL_MAX): string {
+    $storedname = trim((string) ($slide->name ?? ''));
+    if ($storedname !== '') {
+        return slideshow_truncate_slide_list_label(format_string($storedname), $maxlength);
+    }
+
+    $content = (string) ($slide->content ?? '');
+    if (trim($content) === '') {
+        return get_string('slideslistnotitle', 'mod_slideshow');
+    }
+
+    $heading = slideshow_extract_first_heading_text($content);
+    if ($heading !== '') {
+        return slideshow_truncate_slide_list_label($heading, $maxlength);
+    }
+
+    $excerpt = slideshow_plain_text_excerpt($content, $maxlength);
+    if ($excerpt !== '') {
+        return $excerpt;
+    }
+
+    return get_string('slideslistnotitle', 'mod_slideshow');
+}
+
+/**
+ * Extract plain text from the first h1–h6 in HTML (document order).
+ *
+ * @param string $html Slide HTML.
+ * @return string Heading text or empty string.
+ */
+function slideshow_extract_first_heading_text(string $html): string {
+    if (trim($html) === '') {
+        return '';
+    }
+
+    if (preg_match('/<h[1-6]\b[^>]*>(.*?)<\/h[1-6]>/is', $html, $matches)) {
+        $text = html_entity_decode(strip_tags($matches[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return trim(preg_replace('/\s+/u', ' ', $text));
+    }
+
+    return '';
+}
+
+/**
+ * Plain-text excerpt from HTML for slide list labels.
+ *
+ * @param string $html Slide HTML.
+ * @param int $maxlength Maximum characters.
+ * @return string
+ */
+function slideshow_plain_text_excerpt(string $html, int $maxlength): string {
+    $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = trim(preg_replace('/\s+/u', ' ', $text));
+    if ($text === '') {
+        return '';
+    }
+    return slideshow_truncate_slide_list_label($text, $maxlength);
+}
+
+/**
+ * Truncate a slide list label with an ellipsis when needed.
+ *
+ * @param string $text Label text.
+ * @param int $maxlength Maximum characters.
+ * @return string
+ */
+function slideshow_truncate_slide_list_label(string $text, int $maxlength): string {
+    if ($maxlength <= 0) {
+        return '';
+    }
+    if (core_text::strlen($text) <= $maxlength) {
+        return $text;
+    }
+    if ($maxlength === 1) {
+        return '…';
+    }
+    return core_text::substr($text, 0, $maxlength - 1) . '…';
+}
+
 /**
  * Normalise slide HTML so unmatched closing tags cannot break ancestors (slideshow wrapper, watermark, controls).
  *

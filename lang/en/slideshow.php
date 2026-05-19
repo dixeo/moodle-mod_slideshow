@@ -22,6 +22,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 $string['addnew'] = 'Add new slide';
+$string['addnewslide'] = 'New slide';
 $string['confirm'] = 'Delete';
 $string['content'] = 'Slide content';
 $string['contentheader'] = 'Content';
@@ -42,6 +43,7 @@ $string['modulename_link'] = 'mod/slideshow/view';
 $string['modulenameplural'] = 'Slideshows';
 $string['next'] = 'Next slide';
 $string['noslides'] = 'This slideshow is empty.';
+$string['slideslistnotitle'] = 'Untitled slide';
 $string['noslides_teacherhint'] = 'Add a new slide to show content here.';
 $string['pluginadministration'] = 'Slideshow module administration';
 $string['pluginname'] = 'Slideshow';

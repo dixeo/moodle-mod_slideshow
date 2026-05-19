@@ -22,6 +22,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 $string['addnew'] = 'Aggiungi nuova diapositiva';
+$string['addnewslide'] = 'Nuova diapositiva';
 $string['confirm'] = 'Elimina';
 $string['content'] = 'Contenuto della diapositiva';
 $string['contentheader'] = 'Contenuto';
@@ -30,7 +31,10 @@ $string['decrease'] = 'Riduci dimensione testo';
 $string['delete'] = 'Elimina diapositiva';
 $string['deleteconfirm'] = 'Sei sicuro di voler eliminare questa diapositiva?';
 $string['edit'] = 'Modifica diapositiva';
+$string['errorcontainernotfound'] = 'Contenitore della presentazione non trovato.';
 $string['fullscreen'] = 'Schermo intero';
+$string['fullscreenexitnotsupported'] = 'L\'uscita dalla modalità schermo intero non è supportata dal browser.';
+$string['fullscreennotsupported'] = 'La modalità schermo intero non è supportata dal browser.';
 $string['hide'] = 'Nascondi diapositiva';
 $string['increase'] = 'Aumenta dimensione testo';
 $string['modulename'] = 'Presentazione';
@@ -39,6 +43,7 @@ $string['modulename_link'] = 'mod/slideshow/view';
 $string['modulenameplural'] = 'Presentazioni';
 $string['next'] = 'Diapositiva successiva';
 $string['noslides'] = 'Questa presentazione è vuota.';
+$string['slideslistnotitle'] = 'Diapositiva senza titolo';
 $string['noslides_teacherhint'] = 'Aggiungi una nuova slide per mostrare i contenuti qui.';
 $string['pluginadministration'] = 'Amministrazione del modulo presentazione';
 $string['pluginname'] = 'Presentazione';

@@ -338,6 +338,10 @@ body.path-mod-slideshow #slide-list .slide-item .name {
     display: inline-block;
     width: 79%;
     padding-left: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: top;
 }
 
 body.path-mod-slideshow #slide-list .slide-item .actions {
