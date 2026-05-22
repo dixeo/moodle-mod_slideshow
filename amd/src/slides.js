@@ -21,11 +21,20 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-define(['core/config', 'jquery', 'core/modal_save_cancel', 'core/modal_events', 'core/str'],
-    function(Config, $, ModalSaveCancel, ModalEvents, str) {
+define([
+    'core/config',
+    'jquery',
+    'core/modal_save_cancel',
+    'core/modal_events',
+    'core/str',
+    'mod_slideshow/slip',
+], function(Config, $, ModalSaveCancel, ModalEvents, str, Slip) {
     return {
         init: (slideshow) => {
             var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
+            if (!ul) {
+                return;
+            }
 
             ul.addEventListener('slip:beforereorder', function(e) {
                 if (/demo-no-reorder/.test(e.target.className)) {
@@ -58,7 +67,6 @@ define(['core/config', 'jquery', 'core/modal_save_cancel', 'core/modal_events', 
                 return false;
             }, false);
 
-            // eslint-disable-next-line no-undef
             new Slip(ul);
 
             var items = ul.querySelectorAll(".handle");

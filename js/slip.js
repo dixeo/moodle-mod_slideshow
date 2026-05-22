@@ -116,7 +116,16 @@
     USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-window['Slip'] = (function(){
+/**
+ * AMD module for Slip.js touch list reordering (kornelski/slip).
+ *
+ * @module      mod_slideshow/slip
+ * @copyright   2014 Kornel Lesiński (BSD)
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+define([], function() {
+    var Slip = (function() {
     'use strict';
 
     var damnYouChrome = /Chrome\/[34]/.test(navigator.userAgent); // For bugs that can't be programmatically detected :(
@@ -739,4 +748,6 @@ window['Slip'] = (function(){
     };
 
     return Slip;
-})();
+    })();
+    return Slip;
+});

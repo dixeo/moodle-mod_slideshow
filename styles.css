@@ -358,7 +358,7 @@ body.path-mod-slideshow #slide-list .actions button {
 
 body.path-mod-slideshow #slide-list .actions button i {
     margin: 0;
-    color: var(--blue);
+    color: var(--blue, #138df0);
 }
 
 @media (max-width: 678px) {

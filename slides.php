@@ -59,7 +59,13 @@ $PAGE->activityheader->set_attrs([
     'description' => '',
 ]);
 
-$PAGE->requires->js('/mod/slideshow/js/slip.js');
+$slippathconfig = [
+    'paths' => [
+        'mod_slideshow/slip' => $CFG->wwwroot . '/mod/slideshow/js/slip',
+    ],
+];
+$PAGE->requires->js_amd_inline('require.config(' . json_encode($slippathconfig) . ')');
+
 $PAGE->requires->js_call_amd('mod_slideshow/slides', 'init', [$cm->id]);
 
 echo $OUTPUT->header();
