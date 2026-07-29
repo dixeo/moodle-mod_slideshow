@@ -70,6 +70,7 @@ $string['show'] = 'Folie anzeigen';
 $string['slide_saved'] = 'Folie gespeichert';
 $string['slides'] = 'Folien';
 $string['slideshow:addinstance'] = 'Neue Slideshow-Ressource hinzufügen';
+$string['slideshow:manageslides'] = 'Folien verwalten (neu anordnen, ausblenden, löschen)';
 $string['slideshow:view'] = 'Slideshow-Inhalt anzeigen';
 $string['slideshow:viewslides'] = 'Folien anzeigen';
 $string['start'] = 'Slideshow starten';

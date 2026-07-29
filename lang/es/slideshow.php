@@ -70,6 +70,7 @@ $string['show'] = 'Mostrar diapositiva';
 $string['slide_saved'] = 'Diapositiva guardada';
 $string['slides'] = 'Diapositivas';
 $string['slideshow:addinstance'] = 'Agregar nueva presentación de diapositivas';
+$string['slideshow:manageslides'] = 'Gestionar diapositivas (reordenar, ocultar, eliminar)';
 $string['slideshow:view'] = 'Ver contenido de la presentación';
 $string['slideshow:viewslides'] = 'Ver diapositivas';
 $string['start'] = 'Iniciar presentación';

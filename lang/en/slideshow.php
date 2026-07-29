@@ -70,6 +70,7 @@ $string['show'] = 'Show slide';
 $string['slide_saved'] = 'Slide saved';
 $string['slides'] = 'Slides';
 $string['slideshow:addinstance'] = 'Add a new slideshow resource';
+$string['slideshow:manageslides'] = 'Manage slides (reorder, hide, delete)';
 $string['slideshow:view'] = 'View slideshow content';
 $string['slideshow:viewslides'] = 'View slides';
 $string['start'] = 'Start slideshow';

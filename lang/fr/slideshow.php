@@ -70,6 +70,7 @@ $string['show'] = 'Afficher la diapositive';
 $string['slide_saved'] = 'Diapositive enregistrée';
 $string['slides'] = 'Diapositives';
 $string['slideshow:addinstance'] = 'Ajouter une nouvelle ressource diaporama';
+$string['slideshow:manageslides'] = 'Gérer les diapositives (réorganiser, masquer, supprimer)';
 $string['slideshow:view'] = 'Voir le contenu du diaporama';
 $string['slideshow:viewslides'] = 'Voir les diapositives';
 $string['start'] = 'Démarrer le diaporama';

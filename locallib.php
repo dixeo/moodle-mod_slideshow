@@ -76,6 +76,23 @@ function slideshow_get_editor_options($context) {
 }
 
 /**
+ * Whether the current user may load embedded files for a slide via pluginfile.
+ *
+ * @param stdClass|null $slide slideshow_slide row with a hidden field, or null for legacy shared itemid 0.
+ * @param \context $context Module context.
+ * @return bool
+ */
+function slideshow_user_can_view_slide_files(?stdClass $slide, \context $context): bool {
+    if ($slide === null) {
+        return true;
+    }
+    if (empty($slide->hidden)) {
+        return true;
+    }
+    return has_capability('mod/slideshow:viewslides', $context);
+}
+
+/**
  * Build a slideshow_slide row for insert or update from validated form fields.
  *
  * Only whitelisted columns are copied; the owning slideshow id is always taken from the course module.

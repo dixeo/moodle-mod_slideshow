@@ -48,7 +48,7 @@ $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
 require_course_login($course, true, $cm);
 
 $context = context_module::instance($cm->id);
-require_capability('mod/slideshow:viewslides', $context);
+require_capability('mod/slideshow:manageslides', $context);
 
 if (!confirm_sesskey()) {
     $error = ['error' => get_string('invalidsesskey', 'error')];

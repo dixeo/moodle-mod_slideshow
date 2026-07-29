@@ -70,6 +70,7 @@ $string['show'] = 'Mostrar diapositivo';
 $string['slide_saved'] = 'Diapositivo guardado';
 $string['slides'] = 'Diapositivos';
 $string['slideshow:addinstance'] = 'Adicionar nova apresentação de diapositivos';
+$string['slideshow:manageslides'] = 'Gerir diapositivos (reordenar, ocultar, eliminar)';
 $string['slideshow:view'] = 'Ver conteúdo da apresentação';
 $string['slideshow:viewslides'] = 'Ver diapositivos';
 $string['start'] = 'Iniciar apresentação';
