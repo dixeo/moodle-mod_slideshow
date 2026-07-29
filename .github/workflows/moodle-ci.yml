@@ -8,7 +8,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16
         env:
           POSTGRES_USER: 'postgres'
           POSTGRES_HOST_AUTH_METHOD: 'trust'
@@ -30,8 +30,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['7.4', '8.0', '8.1']
-        moodle-branch: ['MOODLE_401_STABLE']
+        php: ['8.1', '8.2', '8.3']
+        moodle-branch: ['MOODLE_405_STABLE']
         database: [pgsql, mariadb]
 
     steps:
@@ -59,10 +59,15 @@ jobs:
           echo "NVM_DIR=$HOME/.nvm" >> $GITHUB_ENV
 
       - name: Install moodle-plugin-ci
-        run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1
+        run: |
+          # Declared in version.php dependencies; required for caps, services, and PHPUnit mocks.
+          # Match Dixeo sibling branch: development/main/release → same on local_dixeo.
+          moodle-plugin-ci add-plugin --branch "$DIXEO_DEP_BRANCH" dixeo/moodle-local_dixeo
+          moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}
+          DIXEO_DEP_BRANCH: ${{ github.event_name == 'pull_request' && github.head_ref || (startsWith(github.ref, 'refs/tags/') && 'release' || github.ref_name) }}
           # Uncomment this to run Behat tests using the Moodle App.
           # MOODLE_APP: 'true'
 
