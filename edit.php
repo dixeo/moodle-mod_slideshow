@@ -78,13 +78,15 @@ $mform->set_data($slide);
 if ($mform->is_cancelled()) {
     redirect($returnurl);
 } else if ($fromform = $mform->get_data()) {
+    $slideshow = $DB->get_record('slideshow', ['id' => $cm->instance], '*', MUST_EXIST);
+    $isnewslide = empty($fromform->id);
     $fromform->timemodified = time();
 
-    if (!empty($fromform->id)) {
-        $DB->update_record('slideshow_slide', $fromform);
-    } else {
+    if ($isnewslide) {
         $fromform->sortorder = $DB->count_records('slideshow_slide', ['slideshow' => $cm->instance]) + 1;
         $fromform->id = $DB->insert_record('slideshow_slide', $fromform);
+    } else {
+        $DB->update_record('slideshow_slide', $fromform);
     }
 
     // Save editor files and persist rewritten content.
@@ -99,6 +101,14 @@ if ($mform->is_cancelled()) {
     );
     $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $fromform->id]);
     $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $fromform->id]);
+
+    $slide = $DB->get_record('slideshow_slide', ['id' => $fromform->id], '*', MUST_EXIST);
+    if ($isnewslide) {
+        $event = \mod_slideshow\event\slide_created::create_from_slide($slideshow, $context, $slide);
+    } else {
+        $event = \mod_slideshow\event\slide_updated::create_from_slide($slideshow, $context, $slide);
+    }
+    $event->trigger();
 
     \core\notification::add(
         get_string('slide_saved', $module->name),

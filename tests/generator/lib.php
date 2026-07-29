@@ -52,4 +52,30 @@ class mod_slideshow_generator extends testing_module_generator {
 
         return parent::create_instance($record, (array) $options);
     }
+
+    /**
+     * Insert a slideshow slide row for tests.
+     *
+     * @param array|stdClass $record Slide fields (slideshow id required).
+     * @return int New slide id.
+     */
+    public function create_slide($record) {
+        global $DB;
+
+        $record = (array) $record;
+        if (empty($record['slideshow'])) {
+            throw new \coding_exception('slideshow id is required to create a slide');
+        }
+
+        $record += [
+            'name' => 'Test slide',
+            'content' => '',
+            'contentformat' => FORMAT_HTML,
+            'hidden' => 0,
+            'sortorder' => 0,
+            'timemodified' => time(),
+        ];
+
+        return $DB->insert_record('slideshow_slide', $record);
+    }
 }

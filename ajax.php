@@ -89,6 +89,10 @@ switch ($action) {
             $result += $DB->update_record('slideshow_slide', $record);
         }
 
+        $movedslide = $DB->get_record('slideshow_slide', ['id' => $slideid], '*', MUST_EXIST);
+        $event = \mod_slideshow\event\slides_reordered::create_from_slide($slideshow, $context, $movedslide);
+        $event->trigger();
+
         $response = [
             'slide' => $slideid,
             'result' => $result,
@@ -97,6 +101,9 @@ switch ($action) {
 
         break;
     case 'delete':
+        $event = \mod_slideshow\event\slide_deleted::create_from_slide($slideshow, $context, $slide);
+        $event->trigger();
+
         $fs = get_file_storage();
         $fs->delete_area_files($context->id, 'mod_slideshow', 'content', $slideid);
 
@@ -117,6 +124,9 @@ switch ($action) {
     case 'hide':
         $slide->hidden = $action == 'hide' ? 1 : 0;
         $result = $DB->update_record('slideshow_slide', $slide);
+
+        $event = \mod_slideshow\event\slide_visibility_updated::create_from_slide($slideshow, $context, $slide);
+        $event->trigger();
 
         $response = [
             'slide' => $slideid,
