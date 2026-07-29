@@ -26,13 +26,12 @@ define('NO_DEBUG_DISPLAY', true);
 
 require_once('../../config.php');
 
-global $DB, $PAGE, $OUTPUT;
+global $DB;
 
 $slideid = required_param('slideid', PARAM_INT);
 $action = required_param('action', PARAM_ALPHA);
 $oldorder = optional_param('oldorder', 0, PARAM_INT);
 $neworder = optional_param('neworder', 0, PARAM_INT);
-$confirm = optional_param('confirm', '', PARAM_ALPHA);
 
 if (!$slide = $DB->get_record('slideshow_slide', ['id' => $slideid])) {
     throw new \moodle_exception('invalidaccessparameter');
@@ -59,7 +58,7 @@ if (!confirm_sesskey()) {
 // Process AJAX request.
 switch ($action) {
     case 'reorder':
-        $result = true;
+        $success = true;
 
         // Update sort order values.
         $records = $DB->get_records('slideshow_slide', ['slideshow' => $slide->slideshow], 'sortorder');
@@ -77,7 +76,9 @@ switch ($action) {
                     }
                 }
             }
-            $result += $DB->update_record('slideshow_slide', $record);
+            if (!$DB->update_record('slideshow_slide', $record)) {
+                $success = false;
+            }
         }
 
         // Fix gaps in sortorder.
@@ -86,7 +87,9 @@ switch ($action) {
         foreach ($records as $record) {
             $record->sortorder = $sortorder;
             $sortorder++;
-            $result += $DB->update_record('slideshow_slide', $record);
+            if (!$DB->update_record('slideshow_slide', $record)) {
+                $success = false;
+            }
         }
 
         $movedslide = $DB->get_record('slideshow_slide', ['id' => $slideid], '*', MUST_EXIST);
@@ -95,7 +98,7 @@ switch ($action) {
 
         $response = [
             'slide' => $slideid,
-            'result' => $result,
+            'result' => $success,
         ];
         echo json_encode($response);
 
@@ -107,15 +110,15 @@ switch ($action) {
         $fs = get_file_storage();
         $fs->delete_area_files($context->id, 'mod_slideshow', 'content', $slideid);
 
-        $result = $DB->delete_records('slideshow_slide', ['id' => $slideid]);
+        $deleted = $DB->delete_records('slideshow_slide', ['id' => $slideid]);
 
         // Renumber sort order after delete.
         $sql = "UPDATE {slideshow_slide} SET sortorder = sortorder -1 WHERE slideshow = ? AND sortorder > ?";
-        $result += $DB->execute($sql, [$slide->slideshow, $slide->sortorder]);
+        $renumbered = $DB->execute($sql, [$slide->slideshow, $slide->sortorder]);
 
         $response = [
             'slide' => $slideid,
-            'result' => $result,
+            'result' => $deleted && $renumbered,
         ];
         echo json_encode($response);
 
@@ -123,7 +126,7 @@ switch ($action) {
     case 'show':
     case 'hide':
         $slide->hidden = $action == 'hide' ? 1 : 0;
-        $result = $DB->update_record('slideshow_slide', $slide);
+        $updated = $DB->update_record('slideshow_slide', $slide);
 
         $event = \mod_slideshow\event\slide_visibility_updated::create_from_slide($slideshow, $context, $slide);
         $event->trigger();
@@ -131,7 +134,7 @@ switch ($action) {
         $response = [
             'slide' => $slideid,
             'action' => $action,
-            'result' => $result,
+            'result' => $updated,
         ];
         echo json_encode($response);
 

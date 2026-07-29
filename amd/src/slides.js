@@ -134,7 +134,7 @@ define([
                     sesskey: Config.sesskey
                 };
                 let settings = {
-                    type: 'GET',
+                    type: 'POST',
                     dataType: 'json',
                     data: data,
                     async: false
@@ -179,7 +179,7 @@ define([
                     sesskey: Config.sesskey
                 };
                 let settings = {
-                    type: 'GET',
+                    type: 'POST',
                     dataType: 'json',
                     data: data,
                     async: false
@@ -247,7 +247,7 @@ define([
                     sesskey: Config.sesskey
                 };
                 let settings = {
-                    type: 'GET',
+                    type: 'POST',
                     dataType: 'json',
                     data: data,
                     async: false
