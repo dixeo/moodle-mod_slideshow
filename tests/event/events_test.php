@@ -25,7 +25,6 @@ namespace mod_slideshow\event;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class events_test extends \advanced_testcase {
-
     /**
      * Set up each test case.
      */
@@ -59,6 +58,8 @@ final class events_test extends \advanced_testcase {
 
     /**
      * Slide created event carries module context and slide id.
+     *
+     * @covers \mod_slideshow\event\slide_created::create_from_slide
      */
     public function test_slide_created(): void {
         [$slideshow, $context, $slide] = $this->create_slideshow_fixture();
@@ -78,6 +79,8 @@ final class events_test extends \advanced_testcase {
 
     /**
      * Slide updated event carries module context and slide id.
+     *
+     * @covers \mod_slideshow\event\slide_updated::create_from_slide
      */
     public function test_slide_updated(): void {
         [$slideshow, $context, $slide] = $this->create_slideshow_fixture();
@@ -97,6 +100,8 @@ final class events_test extends \advanced_testcase {
 
     /**
      * Slide deleted event carries module context and slide id.
+     *
+     * @covers \mod_slideshow\event\slide_deleted::create_from_slide
      */
     public function test_slide_deleted(): void {
         [$slideshow, $context, $slide] = $this->create_slideshow_fixture();
@@ -116,6 +121,8 @@ final class events_test extends \advanced_testcase {
 
     /**
      * Slide visibility updated event carries module context and slide id.
+     *
+     * @covers \mod_slideshow\event\slide_visibility_updated::create_from_slide
      */
     public function test_slide_visibility_updated(): void {
         [$slideshow, $context, $slide] = $this->create_slideshow_fixture();
@@ -135,6 +142,8 @@ final class events_test extends \advanced_testcase {
 
     /**
      * Slides reordered event carries module context and moved slide id.
+     *
+     * @covers \mod_slideshow\event\slides_reordered::create_from_slide
      */
     public function test_slides_reordered(): void {
         [$slideshow, $context, $slide] = $this->create_slideshow_fixture();

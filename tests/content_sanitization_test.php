@@ -23,10 +23,8 @@ namespace mod_slideshow;
  * @category   test
  * @copyright  2026 Josemaria Bolanos <admin@mako.digital>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \mod_slideshow
  */
 final class content_sanitization_test extends \advanced_testcase {
-
     /**
      * Set up each test case.
      */
@@ -40,7 +38,7 @@ final class content_sanitization_test extends \advanced_testcase {
      *
      * @return array<string, array{string, string}>
      */
-    public function dangerous_html_payloads_provider(): array {
+    public static function dangerous_html_payloads_provider(): array {
         return [
             'script_tag' => ['<script>alert(1)</script>', 'alert(1)'],
             'img_onerror' => ['<img src="x" onerror="alert(1)">', 'onerror'],
@@ -57,6 +55,7 @@ final class content_sanitization_test extends \advanced_testcase {
      * @param string $payload Raw HTML.
      * @param string $forbidden Substring that must not appear in cleaned output.
      * @dataProvider dangerous_html_payloads_provider
+     * @covers ::slideshow_sanitize_slide_content
      */
     public function test_sanitize_slide_content_removes_dangerous_markup(string $payload, string $forbidden): void {
         global $CFG;
@@ -74,6 +73,7 @@ final class content_sanitization_test extends \advanced_testcase {
      * @param string $payload Raw HTML.
      * @param string $forbidden Substring that must not appear in formatted output.
      * @dataProvider dangerous_html_payloads_provider
+     * @covers ::slideshow_balance_slide_html
      */
     public function test_display_format_removes_dangerous_markup(string $payload, string $forbidden): void {
         global $CFG;
@@ -91,6 +91,8 @@ final class content_sanitization_test extends \advanced_testcase {
 
     /**
      * Unicode direction override and null bytes must not bypass cleaning.
+     *
+     * @covers ::slideshow_sanitize_slide_content
      */
     public function test_sanitize_slide_content_handles_unicode_tricks(): void {
         global $CFG;
@@ -108,6 +110,8 @@ final class content_sanitization_test extends \advanced_testcase {
 
     /**
      * Malformed nested markup must not leave executable handlers after sanitization.
+     *
+     * @covers ::slideshow_sanitize_slide_content
      */
     public function test_sanitize_slide_content_handles_nested_malformed_markup(): void {
         global $CFG;
@@ -123,6 +127,8 @@ final class content_sanitization_test extends \advanced_testcase {
 
     /**
      * Simulated edit.php save path must persist sanitized HTML in the database.
+     *
+     * @covers ::slideshow_sanitize_slide_content
      */
     public function test_edit_save_path_stores_sanitized_content(): void {
         global $CFG, $DB;
@@ -149,6 +155,8 @@ final class content_sanitization_test extends \advanced_testcase {
 
     /**
      * prepare_slide_save_record must not copy tampered content fields on update.
+     *
+     * @covers ::slideshow_prepare_slide_save_record
      */
     public function test_prepare_slide_save_record_does_not_copy_content_on_update(): void {
         global $CFG;
@@ -173,6 +181,8 @@ final class content_sanitization_test extends \advanced_testcase {
 
     /**
      * Balance helper must return safe HTML when parsing hostile fragments.
+     *
+     * @covers ::slideshow_balance_slide_html
      */
     public function test_balance_slide_html_does_not_restore_handlers(): void {
         global $CFG;

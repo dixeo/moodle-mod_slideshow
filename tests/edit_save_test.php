@@ -25,7 +25,6 @@ namespace mod_slideshow;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class edit_save_test extends \advanced_testcase {
-
     /**
      * Set up each test case.
      */
@@ -36,6 +35,8 @@ final class edit_save_test extends \advanced_testcase {
 
     /**
      * Tampered slideshow id on form data must not override the course module instance id.
+     *
+     * @covers ::slideshow_prepare_slide_save_record
      */
     public function test_prepare_slide_save_record_ignores_tampered_slideshow(): void {
         global $CFG;
@@ -59,6 +60,8 @@ final class edit_save_test extends \advanced_testcase {
 
     /**
      * New slide records include only whitelisted columns for insert.
+     *
+     * @covers ::slideshow_prepare_slide_save_record
      */
     public function test_prepare_slide_save_record_new_slide_fields(): void {
         global $CFG;

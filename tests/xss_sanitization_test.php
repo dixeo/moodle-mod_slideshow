@@ -25,7 +25,6 @@ namespace mod_slideshow;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class xss_sanitization_test extends \advanced_testcase {
-
     /**
      * Set up each test case.
      */
@@ -36,6 +35,8 @@ final class xss_sanitization_test extends \advanced_testcase {
 
     /**
      * Editor options must not bypass Moodle HTML cleaning.
+     *
+     * @covers ::slideshow_get_editor_options
      */
     public function test_editor_options_do_not_enable_noclean(): void {
         global $CFG;
@@ -52,6 +53,8 @@ final class xss_sanitization_test extends \advanced_testcase {
 
     /**
      * Stored slide HTML must be cleaned by the canonical sanitizer.
+     *
+     * @covers ::slideshow_sanitize_slide_content
      */
     public function test_sanitize_slide_content_strips_active_content(): void {
         global $CFG;
@@ -67,6 +70,8 @@ final class xss_sanitization_test extends \advanced_testcase {
 
     /**
      * Slide rendering must not preserve active HTML handlers from untrusted markup.
+     *
+     * @covers ::slideshow_balance_slide_html
      */
     public function test_slide_content_format_strips_active_content(): void {
         global $CFG;

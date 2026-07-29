@@ -24,8 +24,6 @@
 
 namespace mod_slideshow\event;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * The mod_slideshow slide updated event class.
  *
@@ -34,7 +32,6 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class slide_updated extends \core\event\base {
-
     /**
      * Create an instance of this event.
      *

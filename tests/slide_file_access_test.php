@@ -25,7 +25,6 @@ namespace mod_slideshow;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class slide_file_access_test extends \advanced_testcase {
-
     /**
      * Set up each test case.
      */
@@ -36,6 +35,8 @@ final class slide_file_access_test extends \advanced_testcase {
 
     /**
      * Visible slide files are available to participants with mod/slideshow:view.
+     *
+     * @covers ::slideshow_user_can_view_slide_files
      */
     public function test_visible_slide_files_allowed_for_viewers(): void {
         global $CFG;
@@ -54,6 +55,8 @@ final class slide_file_access_test extends \advanced_testcase {
 
     /**
      * Hidden slide files are denied to viewers without mod/slideshow:viewslides.
+     *
+     * @covers ::slideshow_user_can_view_slide_files
      */
     public function test_hidden_slide_files_denied_for_viewers(): void {
         global $CFG;
@@ -72,6 +75,8 @@ final class slide_file_access_test extends \advanced_testcase {
 
     /**
      * Teachers with mod/slideshow:viewslides may load files for hidden slides.
+     *
+     * @covers ::slideshow_user_can_view_slide_files
      */
     public function test_hidden_slide_files_allowed_for_slide_managers(): void {
         global $CFG;
@@ -90,6 +95,8 @@ final class slide_file_access_test extends \advanced_testcase {
 
     /**
      * Legacy shared itemid 0 files are denied to viewers without mod/slideshow:manageslides.
+     *
+     * @covers ::slideshow_user_can_view_slide_files
      */
     public function test_legacy_itemid_zero_files_denied_for_viewers(): void {
         global $CFG;
@@ -107,6 +114,8 @@ final class slide_file_access_test extends \advanced_testcase {
 
     /**
      * Teachers with mod/slideshow:manageslides may load legacy shared itemid 0 files.
+     *
+     * @covers ::slideshow_user_can_view_slide_files
      */
     public function test_legacy_itemid_zero_files_allowed_for_slide_managers(): void {
         global $CFG;
@@ -124,6 +133,8 @@ final class slide_file_access_test extends \advanced_testcase {
 
     /**
      * pluginfile denies legacy itemid 0 for students even when a shared file exists.
+     *
+     * @covers ::slideshow_pluginfile
      */
     public function test_pluginfile_denies_legacy_itemid_zero_for_viewers(): void {
         global $CFG;
@@ -153,6 +164,8 @@ final class slide_file_access_test extends \advanced_testcase {
 
     /**
      * pluginfile denies hidden slide files for students when requested by slide itemid.
+     *
+     * @covers ::slideshow_pluginfile
      */
     public function test_pluginfile_denies_hidden_slide_files_for_viewers(): void {
         global $CFG;
