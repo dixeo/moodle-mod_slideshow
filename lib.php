@@ -337,8 +337,8 @@ function slideshow_pluginfile($course, $cm, $context, $filearea, $args, $forcedo
         $filename = array_pop($args);
         $filepath = $args ? '/' . implode('/', $args) . '/' : '/';
 
+        require_once("$CFG->dirroot/mod/slideshow/locallib.php");
         if ($itemid > 0) {
-            require_once("$CFG->dirroot/mod/slideshow/locallib.php");
             $slide = $DB->get_record('slideshow_slide', [
                 'id' => $itemid,
                 'slideshow' => $cm->instance,
@@ -346,6 +346,8 @@ function slideshow_pluginfile($course, $cm, $context, $filearea, $args, $forcedo
             if (!$slide || !slideshow_user_can_view_slide_files($slide, $context)) {
                 return false;
             }
+        } else if (!slideshow_user_can_view_slide_files(null, $context)) {
+            return false;
         }
 
         $options['immutable'] = true;

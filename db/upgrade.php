@@ -75,5 +75,12 @@ function xmldb_slideshow_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026032816, 'slideshow');
     }
 
+    if ($oldversion < 2026032817) {
+        require_once(__DIR__ . '/../lib.php');
+        upgrade_set_timeout(3600);
+        slideshow_upgrade_migrate_slide_content_files();
+        upgrade_mod_savepoint(true, 2026032817, 'slideshow');
+    }
+
     return true;
 }

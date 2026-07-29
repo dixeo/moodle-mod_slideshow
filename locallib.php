@@ -101,7 +101,7 @@ function slideshow_sanitize_slide_content(string $content, int $format = FORMAT_
  */
 function slideshow_user_can_view_slide_files(?stdClass $slide, \context $context): bool {
     if ($slide === null) {
-        return true;
+        return has_capability('mod/slideshow:manageslides', $context);
     }
     if (empty($slide->hidden)) {
         return true;
