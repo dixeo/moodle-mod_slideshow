@@ -22,10 +22,11 @@
  */
 
 define([
+    'core/config',
     'mod_slideshow/qrcode',
     'core/notification',
     'core/str'
-], function(QRCode, Notification, Str) {
+], function(Config, QRCode, Notification, Str) {
     const Selectors = {
         // Only direct children of the container (avoids .slide divs inside slide content).
         slides: ':scope > .slide',
@@ -191,7 +192,7 @@ define([
                  */
                 function editSlide() {
                     let slideid = slides[current].getAttribute('data-slideid');
-                    window.location.href = '/mod/slideshow/edit.php?cm=' + options.cmid + '&id=' + slideid;
+                    window.location.href = Config.wwwroot + '/mod/slideshow/edit.php?cm=' + options.cmid + '&id=' + slideid;
                 }
 
                 // Set width and height for the QR Code container

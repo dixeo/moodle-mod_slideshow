@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'slideshow', language 'en',
+ * Strings for component 'slideshow', language 'fr',
  *
  * @package    mod_slideshow
  * @copyright  2024 Josemaria Bolanos <admin@mako.digital>
@@ -31,12 +31,12 @@ $string['decrease'] = 'Réduire la taille du texte';
 $string['delete'] = 'Supprimer la diapositive';
 $string['deleteconfirm'] = 'Êtes-vous sûr de vouloir supprimer cette diapositive ?';
 $string['edit'] = 'Modifier la diapositive';
+$string['errorcontainernotfound'] = 'Conteneur du diaporama introuvable.';
 $string['eventslidecreated'] = 'Diapositive créée';
 $string['eventslidedeleted'] = 'Diapositive supprimée';
 $string['eventslideupdated'] = 'Diapositive mise à jour';
 $string['eventslidevisibilityupdated'] = 'Visibilité de la diapositive mise à jour';
 $string['eventslidesreordered'] = 'Diapositives réordonnées';
-$string['errorcontainernotfound'] = 'Conteneur du diaporama introuvable.';
 $string['fullscreen'] = 'Plein écran';
 $string['fullscreenexitnotsupported'] = 'La sortie du plein écran n\'est pas prise en charge par votre navigateur.';
 $string['fullscreennotsupported'] = 'Le mode plein écran n\'est pas pris en charge par votre navigateur.';
@@ -48,8 +48,8 @@ $string['modulename_link'] = 'mod/slideshow/view';
 $string['modulenameplural'] = 'Diaporamas';
 $string['next'] = 'Diapositive suivante';
 $string['noslides'] = 'Ce diaporama est vide.';
-$string['slideslistnotitle'] = 'Diapositive sans titre';
 $string['noslides_teacherhint'] = 'Ajoutez une nouvelle diapositive pour afficher du contenu ici.';
+$string['slideslistnotitle'] = 'Diapositive sans titre';
 $string['pluginadministration'] = 'Administration du module Diaporama';
 $string['pluginname'] = 'Diaporama';
 $string['popupheight'] = 'Hauteur de la fenêtre pop-up (en pixels)';
