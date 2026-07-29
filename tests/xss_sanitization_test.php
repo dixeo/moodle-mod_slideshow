@@ -51,6 +51,21 @@ final class xss_sanitization_test extends \advanced_testcase {
     }
 
     /**
+     * Stored slide HTML must be cleaned by the canonical sanitizer.
+     */
+    public function test_sanitize_slide_content_strips_active_content(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        $payload = '<img src="x" onerror="alert(1)">';
+        $clean = slideshow_sanitize_slide_content($payload, FORMAT_HTML);
+
+        $this->assertStringNotContainsString('onerror', $clean);
+        $this->assertStringNotContainsString('alert(1)', $clean);
+    }
+
+    /**
      * Slide rendering must not preserve active HTML handlers from untrusted markup.
      */
     public function test_slide_content_format_strips_active_content(): void {

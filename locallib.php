@@ -24,6 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die;
 
+global $CFG;
+
 require_once("$CFG->libdir/filelib.php");
 require_once("$CFG->libdir/resourcelib.php");
 require_once("$CFG->dirroot/mod/slideshow/lib.php");
@@ -73,6 +75,21 @@ function slideshow_get_editor_options($context) {
         'changeformat' => 1,
         'context' => $context,
     ];
+}
+
+/**
+ * Sanitize slide HTML for storage (defense in depth; same policy as display cleaning).
+ *
+ * @param string $content Raw slide HTML.
+ * @param int $format Moodle content format.
+ * @return string Cleaned HTML safe for storage.
+ */
+function slideshow_sanitize_slide_content(string $content, int $format = FORMAT_HTML): string {
+    if ($content === '') {
+        return '';
+    }
+
+    return clean_text($content, $format);
 }
 
 /**

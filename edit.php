@@ -106,6 +106,10 @@ if ($mform->is_cancelled()) {
         'content',
         (int) $record->id
     );
+    $fromform->content = slideshow_sanitize_slide_content(
+        $fromform->content,
+        (int) $fromform->contentformat
+    );
     $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $record->id]);
     $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $record->id]);
 

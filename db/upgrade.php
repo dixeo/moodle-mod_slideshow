@@ -60,5 +60,20 @@ function xmldb_slideshow_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026032813, 'slideshow');
     }
 
+    if ($oldversion < 2026032816) {
+        upgrade_set_timeout(3600);
+        $slides = $DB->get_recordset('slideshow_slide', null, 'id ASC', 'id, content, contentformat');
+        foreach ($slides as $slide) {
+            $format = (int) ($slide->contentformat ?? FORMAT_HTML);
+            $content = (string) $slide->content;
+            $clean = $content === '' ? '' : clean_text($content, $format);
+            if ($clean !== $content) {
+                $DB->set_field('slideshow_slide', 'content', $clean, ['id' => $slide->id]);
+            }
+        }
+        $slides->close();
+        upgrade_mod_savepoint(true, 2026032816, 'slideshow');
+    }
+
     return true;
 }
