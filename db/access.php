@@ -35,6 +35,7 @@ $capabilities = [
     ],
 
     'mod/slideshow:viewslides' => [
+        'riskbitmask' => RISK_XSS,
         'captype' => 'read',
         'contextlevel' => CONTEXT_MODULE,
         'archetypes' => [
@@ -46,7 +47,6 @@ $capabilities = [
 
     'mod/slideshow:addinstance' => [
         'riskbitmask' => RISK_XSS,
-
         'captype' => 'write',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [

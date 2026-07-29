@@ -72,8 +72,6 @@ function slideshow_get_editor_options($context) {
         'maxfiles' => -1,
         'changeformat' => 1,
         'context' => $context,
-        'noclean' => 1,
-        'trusttext' => 0,
     ];
 }
 
@@ -173,7 +171,7 @@ function slideshow_truncate_slide_list_label(string $text, int $maxlength): stri
  * Normalise slide HTML so unmatched closing tags cannot break ancestors (slideshow wrapper, watermark, controls).
  *
  * Parsed inside a single synthetic root; libxml repairs typical editor/paste damage (for example stray closing div tags).
- * Does not change Moodle's trust model relative to format_text with noclean — content is still author-supplied.
+ * Repairs structure only; slide HTML is cleaned by format_text before this runs.
  *
  * @param string $html HTML fragment (e.g. output of format_text).
  * @param int $slideid Slide row id (used for a stable wrapper id while parsing).

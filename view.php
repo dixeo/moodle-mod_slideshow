@@ -103,7 +103,6 @@ if ($slides) {
             $slide->id
         );
         $formatoptions = new stdClass();
-        $formatoptions->noclean = true;
         $formatoptions->overflowdiv = true;
         $formatoptions->context = $context;
         $content = format_text($content, $slide->contentformat, $formatoptions);
