@@ -75,6 +75,40 @@ function slideshow_get_editor_options($context) {
     ];
 }
 
+/**
+ * Build a slideshow_slide row for insert or update from validated form fields.
+ *
+ * Only whitelisted columns are copied; the owning slideshow id is always taken from the course module.
+ *
+ * @param stdClass $fromform Form data with name, hidden, and id when updating.
+ * @param int $slideshowid Owning slideshow instance id ($cm->instance).
+ * @param bool $isnewslide True when creating a new slide.
+ * @param int $sortorder Sort order for new slides only.
+ * @return stdClass Record ready for $DB->insert_record or $DB->update_record.
+ */
+function slideshow_prepare_slide_save_record(
+    stdClass $fromform,
+    int $slideshowid,
+    bool $isnewslide,
+    int $sortorder = 0
+): stdClass {
+    $record = new stdClass();
+    $record->name = $fromform->name;
+    $record->hidden = (int) $fromform->hidden;
+    $record->slideshow = $slideshowid;
+    $record->timemodified = time();
+
+    if ($isnewslide) {
+        $record->sortorder = $sortorder;
+        $record->content = '';
+        $record->contentformat = FORMAT_HTML;
+    } else {
+        $record->id = (int) $fromform->id;
+    }
+
+    return $record;
+}
+
 /** @var int Default max length for slide titles on the slides management list. */
 define('SLIDESHOW_SLIDE_LIST_LABEL_MAX', 80);
 

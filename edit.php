@@ -24,29 +24,26 @@
 
 require_once('../../config.php');
 require_once($CFG->dirroot . '/course/modlib.php');
+require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
 require_once('edit_form.php');
 
 $cmid = required_param('cm', PARAM_INT);
 $slideid = optional_param('id', 0, PARAM_INT);
+
+$cm = get_coursemodule_from_id('slideshow', $cmid, 0, false, MUST_EXIST);
+$course = get_course($cm->course, MUST_EXIST);
+
+require_course_login($course, true, $cm);
+
+$context = context_module::instance($cm->id);
+require_capability('mod/slideshow:viewslides', $context);
 
 $pluginmanager = \core_plugin_manager::instance();
 if ($slideid && $pluginmanager->get_plugin_info('local_dixeo_editor')) {
     redirect(new moodle_url('/local/dixeo_editor/content_edition.php', ['cmid' => $cmid, 'slideid' => $slideid]));
 }
 
-// Check the course module exists.
-$cm = get_coursemodule_from_id('', $cmid, 0, false, MUST_EXIST);
-// Check module exists.
-$module = $DB->get_record('modules', ['id' => $cm->module], '*', MUST_EXIST);
-// Check the course exists.
-$course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
-
-require_login($course);
-
-$returnurl = new moodle_url("/mod/$module->name/slides.php", ['id' => $cm->id]);
-
-$context = context_module::instance($cm->id);
-require_capability('mod/slideshow:viewslides', $context);
+$returnurl = new moodle_url('/mod/slideshow/slides.php', ['id' => $cm->id]);
 $editoroptions = slideshow_get_editor_options($context);
 
 $slide = new stdClass();
@@ -62,12 +59,9 @@ if ($slideid) {
     $slide = file_prepare_standard_editor($slide, 'content', $editoroptions, $context, 'mod_slideshow', 'content', 0);
 }
 
-$urlparams = ['cm' => $cm->id, 'id' => $slideid];
-$url = new moodle_url("/mod/$module->name/edit.php", $urlparams);
+$url = new moodle_url('/mod/slideshow/edit.php', ['cm' => $cm->id, 'id' => $slideid]);
 $PAGE->set_url($url);
-
-$pagepath = "mod-$module->name-mod";
-$PAGE->set_pagetype($pagepath);
+$PAGE->set_pagetype('mod-slideshow-mod');
 $PAGE->set_pagelayout('incourse');
 $PAGE->add_body_class('limitedwidth');
 $PAGE->set_context($context);
@@ -80,14 +74,27 @@ if ($mform->is_cancelled()) {
 } else if ($fromform = $mform->get_data()) {
     $slideshow = $DB->get_record('slideshow', ['id' => $cm->instance], '*', MUST_EXIST);
     $isnewslide = empty($fromform->id);
-    $fromform->timemodified = time();
+
+    if (!$isnewslide) {
+        $DB->get_record('slideshow_slide', [
+            'id' => (int) $fromform->id,
+            'slideshow' => $cm->instance,
+        ], 'id', MUST_EXIST);
+    }
+
+    $sortorder = $isnewslide
+        ? $DB->count_records('slideshow_slide', ['slideshow' => $cm->instance]) + 1
+        : 0;
+    $record = slideshow_prepare_slide_save_record($fromform, (int) $cm->instance, $isnewslide, $sortorder);
 
     if ($isnewslide) {
-        $fromform->sortorder = $DB->count_records('slideshow_slide', ['slideshow' => $cm->instance]) + 1;
-        $fromform->id = $DB->insert_record('slideshow_slide', $fromform);
+        $record->id = $DB->insert_record('slideshow_slide', $record);
     } else {
-        $DB->update_record('slideshow_slide', $fromform);
+        $DB->update_record('slideshow_slide', $record);
     }
+
+    $fromform->id = $record->id;
+    $fromform->slideshow = $cm->instance;
 
     // Save editor files and persist rewritten content.
     $fromform = file_postupdate_standard_editor(
@@ -97,12 +104,12 @@ if ($mform->is_cancelled()) {
         $context,
         'mod_slideshow',
         'content',
-        (int) $fromform->id
+        (int) $record->id
     );
-    $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $fromform->id]);
-    $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $fromform->id]);
+    $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $record->id]);
+    $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $record->id]);
 
-    $slide = $DB->get_record('slideshow_slide', ['id' => $fromform->id], '*', MUST_EXIST);
+    $slide = $DB->get_record('slideshow_slide', ['id' => $record->id], '*', MUST_EXIST);
     if ($isnewslide) {
         $event = \mod_slideshow\event\slide_created::create_from_slide($slideshow, $context, $slide);
     } else {
@@ -111,21 +118,21 @@ if ($mform->is_cancelled()) {
     $event->trigger();
 
     \core\notification::add(
-        get_string('slide_saved', $module->name),
+        get_string('slide_saved', 'slideshow'),
         \core\notification::SUCCESS
     );
 
     redirect($returnurl);
 } else {
     if ($slideid) {
-        $pageheading = $pagetitle = get_string('edit', $module->name);
+        $pageheading = $pagetitle = get_string('edit', 'slideshow');
     } else {
         $pageheading = $pagetitle = get_string('addnewslide', 'mod_slideshow');
     }
     $PAGE->navbar->add($pageheading);
 
     $PAGE->set_heading($course->fullname);
-    $pagetitle = $pagetitle . moodle_page::TITLE_SEPARATOR . $module->name;
+    $pagetitle = $pagetitle . moodle_page::TITLE_SEPARATOR . get_string('modulename', 'slideshow');
     $PAGE->set_title($pagetitle);
     $PAGE->set_cacheable(false);
     $PAGE->set_cm($cm);
@@ -133,7 +140,7 @@ if ($mform->is_cancelled()) {
     $PAGE->activityheader->disable();
 
     echo $OUTPUT->header();
-    echo $OUTPUT->heading_with_help($pageheading, '', $module->name);
+    echo $OUTPUT->heading_with_help($pageheading, '', 'slideshow');
 
     $mform->display();
 
