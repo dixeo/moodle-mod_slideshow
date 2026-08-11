@@ -357,13 +357,9 @@ function slideshow_pluginfile($course, $cm, $context, $filearea, $args, $forcedo
 
     $fs = get_file_storage();
     $file = $fs->get_file($context->id, 'mod_slideshow', 'content', $itemid, $filepath, $filename);
+    // Do not fall back to legacy itemid 0 after authorizing a positive slide itemid (SLS-SEC-003).
     if (!$file || $file->is_directory()) {
-        // Legacy: all slides shared itemid 0; first URL segment was slideshow revision, not slide id.
-        $file = $fs->get_file($context->id, 'mod_slideshow', 'content', 0, $filepath, $filename);
-    }
-    if (!$file || $file->is_directory()) {
-        send_header_404();
-        die;
+        return false;
     }
 
     send_stored_file($file, null, 0, $forcedownload, $options);

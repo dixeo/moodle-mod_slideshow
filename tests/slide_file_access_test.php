@@ -163,6 +163,42 @@ final class slide_file_access_test extends \advanced_testcase {
     }
 
     /**
+     * pluginfile must not serve a legacy itemid 0 file when requested via a visible slide id.
+     *
+     * @covers ::slideshow_pluginfile
+     */
+    public function test_pluginfile_denies_legacy_file_via_visible_slide_for_viewers(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/lib.php');
+
+        $course = $this->getDataGenerator()->create_course();
+        $slideshow = $this->getDataGenerator()->create_module('slideshow', ['course' => $course->id]);
+        $context = \context_module::instance($slideshow->cmid);
+        $cm = get_coursemodule_from_id('slideshow', $slideshow->cmid);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $generator = $this->getDataGenerator()->get_plugin_generator('mod_slideshow');
+        $slideid = $generator->create_slide([
+            'slideshow' => $slideshow->id,
+            'hidden' => 0,
+        ]);
+
+        $fs = get_file_storage();
+        $fs->create_file_from_string([
+            'contextid' => $context->id,
+            'component' => 'mod_slideshow',
+            'filearea' => 'content',
+            'itemid' => 0,
+            'filepath' => '/',
+            'filename' => 'legacy.png',
+        ], 'png');
+
+        $this->setUser($student);
+        $result = slideshow_pluginfile($course, $cm, $context, 'content', [$slideid, 'legacy.png'], false);
+        $this->assertFalse($result);
+    }
+
+    /**
      * pluginfile denies hidden slide files for students when requested by slide itemid.
      *
      * @covers ::slideshow_pluginfile
