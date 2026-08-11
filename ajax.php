@@ -25,6 +25,7 @@ define('AJAX_SCRIPT', true);
 define('NO_DEBUG_DISPLAY', true);
 
 require_once('../../config.php');
+require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
 
 global $DB;
 
@@ -55,93 +56,9 @@ if (!confirm_sesskey()) {
     die(json_encode($error));
 }
 
-// Process AJAX request.
-switch ($action) {
-    case 'reorder':
-        $success = true;
-
-        // Update sort order values.
-        $records = $DB->get_records('slideshow_slide', ['slideshow' => $slide->slideshow], 'sortorder');
-        foreach ($records as $record) {
-            if ($record->sortorder == $oldorder) {
-                $record->sortorder = $neworder;
-            } else {
-                if ($neworder > $oldorder) {
-                    if ($record->sortorder > $oldorder && $record->sortorder <= $neworder) {
-                        $record->sortorder--;
-                    }
-                } else {
-                    if ($record->sortorder >= $neworder && $record->sortorder < $oldorder) {
-                        $record->sortorder++;
-                    }
-                }
-            }
-            if (!$DB->update_record('slideshow_slide', $record)) {
-                $success = false;
-            }
-        }
-
-        // Fix gaps in sortorder.
-        $records = $DB->get_records('slideshow_slide', ['slideshow' => $slide->slideshow], 'sortorder');
-        $sortorder = 0;
-        foreach ($records as $record) {
-            $record->sortorder = $sortorder;
-            $sortorder++;
-            if (!$DB->update_record('slideshow_slide', $record)) {
-                $success = false;
-            }
-        }
-
-        $movedslide = $DB->get_record('slideshow_slide', ['id' => $slideid], '*', MUST_EXIST);
-        $event = \mod_slideshow\event\slides_reordered::create_from_slide($slideshow, $context, $movedslide);
-        $event->trigger();
-
-        $response = [
-            'slide' => $slideid,
-            'result' => $success,
-        ];
-        echo json_encode($response);
-
-        break;
-    case 'delete':
-        $event = \mod_slideshow\event\slide_deleted::create_from_slide($slideshow, $context, $slide);
-        $event->trigger();
-
-        $fs = get_file_storage();
-        $fs->delete_area_files($context->id, 'mod_slideshow', 'content', $slideid);
-
-        $deleted = $DB->delete_records('slideshow_slide', ['id' => $slideid]);
-
-        // Renumber sort order after delete.
-        $sql = "UPDATE {slideshow_slide} SET sortorder = sortorder -1 WHERE slideshow = ? AND sortorder > ?";
-        $renumbered = $DB->execute($sql, [$slide->slideshow, $slide->sortorder]);
-
-        $response = [
-            'slide' => $slideid,
-            'result' => $deleted && $renumbered,
-        ];
-        echo json_encode($response);
-
-        break;
-    case 'show':
-    case 'hide':
-        $slide->hidden = $action == 'hide' ? 1 : 0;
-        $updated = $DB->update_record('slideshow_slide', $slide);
-
-        $event = \mod_slideshow\event\slide_visibility_updated::create_from_slide($slideshow, $context, $slide);
-        $event->trigger();
-
-        $response = [
-            'slide' => $slideid,
-            'action' => $action,
-            'result' => $updated,
-        ];
-        echo json_encode($response);
-
-        break;
-    default:
-        break;
+$response = slideshow_process_ajax_action($action, $slide, $slideshow, $context, $oldorder, $neworder);
+if ($response !== []) {
+    echo json_encode($response);
 }
 
-// No matching action; end script.
 die;
