@@ -14,95 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace mod_slideshow;
-
 /**
- * DB proxy that can force write failures for AJAX mutation tests.
+ * Tests that AJAX mutations skip events when persistence fails.
  *
  * @package    mod_slideshow
  * @category   test
  * @copyright  2026 Josemaria Bolanos <admin@mako.digital>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class ajax_failing_db_proxy {
-    /** @var \moodle_database Real database. */
-    private $real;
 
-    /** @var bool Force update_record to fail. */
-    private $failupdate;
+namespace mod_slideshow;
 
-    /** @var bool Force delete_records to fail. */
-    private $faildelete;
+defined('MOODLE_INTERNAL') || die();
 
-    /** @var bool Force execute to fail. */
-    private $failexecute;
-
-    /**
-     * @param \moodle_database $real Real database connection.
-     * @param bool $failupdate Fail update_record calls.
-     * @param bool $faildelete Fail delete_records calls.
-     * @param bool $failexecute Fail execute calls.
-     */
-    public function __construct(
-        \moodle_database $real,
-        bool $failupdate = false,
-        bool $faildelete = false,
-        bool $failexecute = false
-    ) {
-        $this->real = $real;
-        $this->failupdate = $failupdate;
-        $this->faildelete = $faildelete;
-        $this->failexecute = $failexecute;
-    }
-
-    /**
-     * @param string $table Table name.
-     * @param object|array $dataobject Record.
-     * @param bool $bulk Bulk flag.
-     * @return bool
-     */
-    public function update_record($table, $dataobject, $bulk = false) {
-        if ($this->failupdate) {
-            return false;
-        }
-        return $this->real->update_record($table, $dataobject, $bulk);
-    }
-
-    /**
-     * @param string $table Table name.
-     * @param array|null $conditions Conditions.
-     * @return bool
-     */
-    public function delete_records($table, ?array $conditions = null) {
-        if ($this->faildelete) {
-            return false;
-        }
-        return $this->real->delete_records($table, $conditions);
-    }
-
-    /**
-     * @param string $sql SQL statement.
-     * @param array|null $params Parameters.
-     * @return bool
-     */
-    public function execute($sql, ?array $params = null) {
-        if ($this->failexecute) {
-            return false;
-        }
-        return $this->real->execute($sql, $params);
-    }
-
-    /**
-     * Proxy remaining database API calls to the real connection.
-     *
-     * @param string $name Method name.
-     * @param array $arguments Arguments.
-     * @return mixed
-     */
-    public function __call(string $name, array $arguments) {
-        return $this->real->$name(...$arguments);
-    }
-}
+require_once(__DIR__ . '/fixtures/ajax_failing_db_proxy.php');
 
 /**
  * Tests that AJAX mutations skip events when persistence fails.
@@ -187,7 +112,7 @@ final class ajax_mutation_events_test extends \advanced_testcase {
         $proxy = new ajax_failing_db_proxy($DB, true, false, false);
 
         $sink = $this->redirectEvents();
-        $response = $this->with_db_proxy($proxy, function() use ($slidea, $slideshow, $context) {
+        $response = $this->with_db_proxy($proxy, function () use ($slidea, $slideshow, $context) {
             return slideshow_process_ajax_action('reorder', $slidea, $slideshow, $context, 0, 1);
         });
 
@@ -210,7 +135,7 @@ final class ajax_mutation_events_test extends \advanced_testcase {
         $proxy = new ajax_failing_db_proxy($DB, false, true, false);
 
         $sink = $this->redirectEvents();
-        $response = $this->with_db_proxy($proxy, function() use ($slidea, $slideshow, $context) {
+        $response = $this->with_db_proxy($proxy, function () use ($slidea, $slideshow, $context) {
             return slideshow_process_ajax_action('delete', $slidea, $slideshow, $context);
         });
 
@@ -234,7 +159,7 @@ final class ajax_mutation_events_test extends \advanced_testcase {
         $proxy = new ajax_failing_db_proxy($DB, true, false, false);
 
         $sink = $this->redirectEvents();
-        $response = $this->with_db_proxy($proxy, function() use ($slidea, $slideshow, $context) {
+        $response = $this->with_db_proxy($proxy, function () use ($slidea, $slideshow, $context) {
             return slideshow_process_ajax_action('hide', $slidea, $slideshow, $context);
         });
 
