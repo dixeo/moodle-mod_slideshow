@@ -290,3 +290,141 @@ function slideshow_balance_slide_html(string $html, int $slideid): string {
     }
     return $out;
 }
+
+/**
+ * Process a manageslides AJAX mutation.
+ *
+ * Mutation events are emitted only after a confirmed successful change.
+ *
+ * @param string $action One of reorder, delete, show, hide.
+ * @param stdClass $slide Slide record being mutated.
+ * @param stdClass $slideshow Parent slideshow instance.
+ * @param context $context Module context.
+ * @param int $oldorder Previous sort order for reorder.
+ * @param int $neworder Target sort order for reorder.
+ * @return array JSON-serializable response payload, or empty array for unknown actions.
+ */
+function slideshow_process_ajax_action(
+    string $action,
+    stdClass $slide,
+    stdClass $slideshow,
+    context $context,
+    int $oldorder = 0,
+    int $neworder = 0
+): array {
+    global $DB;
+
+    $slideid = (int) $slide->id;
+
+    switch ($action) {
+        case 'reorder':
+            $success = true;
+            $transaction = $DB->start_delegated_transaction();
+
+            // Update sort order values.
+            $records = $DB->get_records('slideshow_slide', ['slideshow' => $slide->slideshow], 'sortorder');
+            foreach ($records as $record) {
+                if ($record->sortorder == $oldorder) {
+                    $record->sortorder = $neworder;
+                } else {
+                    if ($neworder > $oldorder) {
+                        if ($record->sortorder > $oldorder && $record->sortorder <= $neworder) {
+                            $record->sortorder--;
+                        }
+                    } else {
+                        if ($record->sortorder >= $neworder && $record->sortorder < $oldorder) {
+                            $record->sortorder++;
+                        }
+                    }
+                }
+                if (!$DB->update_record('slideshow_slide', $record)) {
+                    $success = false;
+                    break;
+                }
+            }
+
+            // Fix gaps in sortorder.
+            if ($success) {
+                $records = $DB->get_records('slideshow_slide', ['slideshow' => $slide->slideshow], 'sortorder');
+                $sortorder = 0;
+                foreach ($records as $record) {
+                    $record->sortorder = $sortorder;
+                    $sortorder++;
+                    if (!$DB->update_record('slideshow_slide', $record)) {
+                        $success = false;
+                        break;
+                    }
+                }
+            }
+
+            if ($success) {
+                $transaction->allow_commit();
+                $movedslide = $DB->get_record('slideshow_slide', ['id' => $slideid], '*', MUST_EXIST);
+                $event = \mod_slideshow\event\slides_reordered::create_from_slide($slideshow, $context, $movedslide);
+                $event->trigger();
+            }
+            // Uncommitted delegated transaction rolls back on dispose.
+
+            return [
+                'slide' => $slideid,
+                'result' => $success,
+            ];
+
+        case 'delete':
+            // Keep a snapshot for the event; emit only after a confirmed delete.
+            $slidesnapshot = clone $slide;
+            $transaction = $DB->start_delegated_transaction();
+
+            $fs = get_file_storage();
+            $fs->delete_area_files($context->id, 'mod_slideshow', 'content', $slideid);
+
+            $deleted = $DB->delete_records('slideshow_slide', ['id' => $slideid]);
+
+            // Renumber sort order after delete.
+            $renumbered = false;
+            if ($deleted) {
+                $sql = "UPDATE {slideshow_slide} SET sortorder = sortorder -1
+                           WHERE slideshow = ? AND sortorder > ?";
+                $renumbered = $DB->execute($sql, [$slide->slideshow, $slide->sortorder]);
+            }
+
+            $success = $deleted && $renumbered;
+            if ($success) {
+                $transaction->allow_commit();
+                $event = \mod_slideshow\event\slide_deleted::create_from_slide(
+                    $slideshow,
+                    $context,
+                    $slidesnapshot
+                );
+                $event->trigger();
+            }
+
+            return [
+                'slide' => $slideid,
+                'result' => $success,
+            ];
+
+        case 'show':
+        case 'hide':
+            $slide->hidden = $action == 'hide' ? 1 : 0;
+            $updated = $DB->update_record('slideshow_slide', $slide);
+
+            if ($updated) {
+                $event = \mod_slideshow\event\slide_visibility_updated::create_from_slide(
+                    $slideshow,
+                    $context,
+                    $slide
+                );
+                $event->trigger();
+            }
+
+            return [
+                'slide' => $slideid,
+                'action' => $action,
+                'result' => $updated,
+            ];
+
+        default:
+            return [];
+    }
+}
