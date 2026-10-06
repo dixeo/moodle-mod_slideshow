@@ -24,8 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026081800;        // The current module version (Date: YYYYMMDDXX).
+$plugin->version   = 2026100600;        // The current module version (Date: YYYYMMDDXX).
 $plugin->requires  = 2023100900;        // Moodle 4.3 (Build: 20231009) minimum.
 $plugin->component = 'mod_slideshow';   // Full name of the plugin (used for diagnostics).
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.1.1';
+$plugin->release   = '1.1.2';
