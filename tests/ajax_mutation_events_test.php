@@ -19,7 +19,7 @@
  *
  * @package    mod_slideshow
  * @category   test
- * @copyright  2026 Josemaria Bolanos <admin@mako.digital>
+ * @copyright  2026 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -34,7 +34,7 @@ require_once(__DIR__ . '/fixtures/ajax_failing_db_proxy.php');
  *
  * @package    mod_slideshow
  * @category   test
- * @copyright  2026 Josemaria Bolanos <admin@mako.digital>
+ * @copyright  2026 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers ::slideshow_process_ajax_action
  */

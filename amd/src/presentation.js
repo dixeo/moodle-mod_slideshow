@@ -17,7 +17,7 @@
  * Add navigation functionality to slideshow.
  *
  * @module      mod_slideshow/presentation
- * @copyright   2025 Josemaria Bolanos <admin@mako.digital>
+ * @copyright   2025 Dixeo
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

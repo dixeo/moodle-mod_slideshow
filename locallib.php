@@ -18,7 +18,7 @@
  * Private slideshow module utility functions
  *
  * @package mod_slideshow
- * @copyright  2009 Petr Skoda (http://skodak.org)
+ * @copyright  2024 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -144,7 +144,7 @@ function slideshow_prepare_slide_save_record(
 }
 
 /** @var int Default max length for slide titles on the slides management list. */
-define('SLIDESHOW_SLIDE_LIST_LABEL_MAX', 80);
+define('MOD_SLIDESHOW_SLIDE_LIST_LABEL_MAX', 80);
 
 /**
  * Label for one slide on the slides management list (slides.php).
@@ -156,7 +156,7 @@ define('SLIDESHOW_SLIDE_LIST_LABEL_MAX', 80);
  * @param int $maxlength Maximum characters (multibyte-safe).
  * @return string Plain-text label for display.
  */
-function slideshow_get_slide_list_name(stdClass $slide, int $maxlength = SLIDESHOW_SLIDE_LIST_LABEL_MAX): string {
+function slideshow_get_slide_list_name(stdClass $slide, int $maxlength = MOD_SLIDESHOW_SLIDE_LIST_LABEL_MAX): string {
     $storedname = trim((string) ($slide->name ?? ''));
     if ($storedname !== '') {
         return slideshow_truncate_slide_list_label(format_string($storedname), $maxlength);

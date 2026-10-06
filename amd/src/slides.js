@@ -17,7 +17,7 @@
  * Slide list management (reorder, delete, visibility) for mod_slideshow.
  *
  * @module      mod_slideshow/slides
- * @copyright   2024 Josemaria Bolanos <admin@mako.digital>
+ * @copyright   2024 Dixeo
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

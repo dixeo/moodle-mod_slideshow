@@ -18,7 +18,7 @@
  * AJAX endpoints for slide reorder and related actions.
  *
  * @package    mod_slideshow
- * @copyright  2025 Josemaria Bolanos <admin@mako.digital>
+ * @copyright  2025 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 define('AJAX_SCRIPT', true);

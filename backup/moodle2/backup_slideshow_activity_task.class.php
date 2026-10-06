@@ -18,7 +18,7 @@
  * Backup task for one slideshow activity instance.
  *
  * @package    mod_slideshow
- * @copyright  2026 Josemaria Bolanos <admin@mako.digital>
+ * @copyright  2026 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

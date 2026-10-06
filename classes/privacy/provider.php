@@ -18,7 +18,7 @@
  * Privacy API for mod_slideshow.
  *
  * @package    mod_slideshow
- * @copyright  2024 Josemaria Bolanos <admin@mako.digital>
+ * @copyright  2024 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

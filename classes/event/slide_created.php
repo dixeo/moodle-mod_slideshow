@@ -18,7 +18,7 @@
  * The mod_slideshow slide created event.
  *
  * @package    mod_slideshow
- * @copyright  2026 Josemaria Bolanos <admin@mako.digital>
+ * @copyright  2026 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -28,7 +28,7 @@ namespace mod_slideshow\event;
  * The mod_slideshow slide created event class.
  *
  * @package    mod_slideshow
- * @copyright  2026 Josemaria Bolanos <admin@mako.digital>
+ * @copyright  2026 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class slide_created extends \core\event\base {

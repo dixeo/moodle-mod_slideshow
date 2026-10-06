@@ -19,7 +19,7 @@
  *
  * @package    mod_slideshow
  * @category   test
- * @copyright  2026 Josemaria Bolanos <admin@mako.digital>
+ * @copyright  2026 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -28,7 +28,7 @@
  *
  * @package    mod_slideshow
  * @category   test
- * @copyright  2026 Josemaria Bolanos <admin@mako.digital>
+ * @copyright  2026 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_slideshow_generator extends testing_module_generator {

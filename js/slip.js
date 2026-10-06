@@ -121,7 +121,7 @@
  *
  * @module      mod_slideshow/slip
  * @copyright   2014 Kornel Lesiński (BSD)
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @license     BSD-2-Clause
  */
 
 define([], function() {

@@ -45,3 +45,19 @@ The module implements **`FEATURE_BACKUP_MOODLE2`** with `backup/moodle2` definit
 
 The plugin implements the Moodle **Privacy API** as a **null provider** (`classes/privacy/provider.php`): it does not store personal data in its own database tables (content is course material, like the Page resource). Intro and slide files use Moodle’s standard file storage in the activity context.
 
+# Support
+
+For documentation, licensing or technical support:
+
+**Dixeo**
+
+https://www.dixeo.com
+
+support@dixeo.com
+
+# License
+
+Copyright © Dixeo
+
+Licensed under the GNU General Public License v3.0 or later. Third-party libraries bundled in this plugin keep their own licences, declared in `thirdpartylibs.xml`.
+

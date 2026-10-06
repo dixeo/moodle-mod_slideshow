@@ -21,7 +21,7 @@ namespace mod_slideshow\event;
  *
  * @package    mod_slideshow
  * @category   test
- * @copyright  2026 Josemaria Bolanos <admin@mako.digital>
+ * @copyright  2026 Dixeo
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class events_test extends \advanced_testcase {
