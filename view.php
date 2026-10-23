@@ -77,23 +77,34 @@ if ($slides) {
 $slidedata = [];
 $firstslide = true;
 foreach ($slides as $slide) {
-    $content = file_rewrite_pluginfile_urls(
-        $slide->content,
-        'pluginfile.php',
-        $context->id,
-        'mod_slideshow',
-        'content',
-        $slide->id
-    );
-    $formatoptions = new stdClass();
-    $formatoptions->overflowdiv = true;
-    $formatoptions->context = $context;
-    $content = format_text($content, $slide->contentformat, $formatoptions);
-    $content = slideshow_balance_slide_html($content, (int) $slide->id);
+    $layout = slideshow_normalize_layout($slide->layout ?? null);
+    $content = '';
+    $imageurl = null;
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $content = file_rewrite_pluginfile_urls(
+            $slide->content,
+            'pluginfile.php',
+            $context->id,
+            'mod_slideshow',
+            'content',
+            $slide->id
+        );
+        $formatoptions = new stdClass();
+        $formatoptions->overflowdiv = true;
+        $formatoptions->context = $context;
+        $content = format_text($content, $slide->contentformat, $formatoptions);
+        $content = slideshow_balance_slide_html($content, (int) $slide->id);
+    }
+    if (
+        $layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT
+    ) {
+        $imageurl = slideshow_get_slide_image_url($context, (int) $slide->id);
+    }
+
     $slidedata[] = [
-        'id' => $slide->id,
-        'content' => $content,
-        'first' => $firstslide,
+        'html' => slideshow_render_slide_html($slide, $content, $imageurl, !$firstslide),
     ];
     $firstslide = false;
 }

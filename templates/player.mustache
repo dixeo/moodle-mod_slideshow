@@ -27,7 +27,7 @@
     Context variables required for this template:
     * cmid
     * hasslides
-    * slides
+    * slides (each item is rendered slide markup in html)
     * slidecount
     * singleslide
     * watermarkurl
@@ -44,7 +44,7 @@
     {
         "cmid": 1,
         "hasslides": true,
-        "slides": [{"id": 10, "content": "<p>Hello</p>", "first": true}],
+        "slides": [{"html": "<div class=\"slide no-overflow\" data-slideid=\"10\"><p>Hello</p></div>"}],
         "slidecount": 1,
         "singleslide": true,
         "watermarkurl": "https://example.com/theme/image.php/boost/slideshow/1/dixeo",
@@ -64,9 +64,7 @@
         <div class="scantoenrol">{{#str}}scantoenrol, slideshow{{/str}}</div>
     </div>
     {{#slides}}
-        <div class="slide no-overflow{{^first}} hidden{{/first}}" data-slideid="{{id}}">
-            {{{content}}}
-        </div>
+        {{{html}}}
     {{/slides}}
     <div class="watermark">
         <img class="watermark" src="{{watermarkurl}}" alt="{{#str}}watermark, slideshow{{/str}}">

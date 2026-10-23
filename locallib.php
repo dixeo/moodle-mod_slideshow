@@ -267,6 +267,105 @@ function slideshow_normalize_layout(?string $layout): string {
 }
 
 /**
+ * Pluginfile URL for the slide image, when one file is stored.
+ *
+ * @param \context $context Module context.
+ * @param int $slideid Slide id, used as the file itemid.
+ * @return string|null URL, or null when the slide has no image.
+ */
+function slideshow_get_slide_image_url(\context $context, int $slideid): ?string {
+    $fs = get_file_storage();
+    $files = $fs->get_area_files(
+        $context->id,
+        'mod_slideshow',
+        'image',
+        $slideid,
+        'filename',
+        false
+    );
+    foreach ($files as $file) {
+        if ($file->is_directory()) {
+            continue;
+        }
+        return moodle_url::make_pluginfile_url(
+            $context->id,
+            'mod_slideshow',
+            'image',
+            $slideid,
+            $file->get_filepath(),
+            $file->get_filename()
+        )->out(false);
+    }
+    return null;
+}
+
+/**
+ * Player markup for one slide.
+ *
+ * The title is plain text. Title only omits the body and the image. A background
+ * image is a CSS background on an inner element so the player can set the slide
+ * height without removing it. With no image the slide stays on the light background.
+ *
+ * @param stdClass $slide Slide row with name and layout.
+ * @param string $contenthtml Already formatted slide body.
+ * @param string|null $imageurl Slide image URL, or null when no file is stored.
+ * @param bool $hidden True when the slide is not the one shown first.
+ * @return string
+ */
+function slideshow_render_slide_html(
+    stdClass $slide,
+    string $contenthtml,
+    ?string $imageurl,
+    bool $hidden = false
+): string {
+    $layout = slideshow_normalize_layout($slide->layout ?? null);
+    $usesimage = $layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT;
+    $hasimage = $usesimage && $imageurl !== null && $imageurl !== '';
+
+    $classes = 'slide no-overflow layout-' . $layout;
+    if ($layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND && $hasimage) {
+        $classes .= ' has-image';
+    }
+    if ($hidden) {
+        $classes .= ' hidden';
+    }
+
+    $title = html_writer::tag('h2', format_string($slide->name ?? ''), ['class' => 'slide-title']);
+    $inner = $title;
+
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $body = html_writer::div($contenthtml, 'slide-body');
+        if ($layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT) {
+            $mediaattrs = ['aria-hidden' => 'true'];
+            if ($hasimage) {
+                $mediaattrs['style'] = 'background-image:url("' . $imageurl . '")';
+            }
+            $media = html_writer::div('', 'slide-media', $mediaattrs);
+            $inner .= html_writer::div($media . $body, 'slide-split');
+        } else {
+            $inner .= $body;
+        }
+    }
+
+    if ($layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND && $hasimage) {
+        $backdrop = html_writer::div('', 'slide-backdrop', [
+            'style' => 'background-image:url("' . $imageurl . '")',
+            'aria-hidden' => 'true',
+        ]);
+        $inner = $backdrop . html_writer::div($inner, 'slide-layout');
+    } else {
+        $inner = html_writer::div($inner, 'slide-layout');
+    }
+
+    return html_writer::div($inner, $classes, [
+        'data-slideid' => (int) ($slide->id ?? 0),
+        'data-layout' => $layout,
+    ]);
+}
+
+/**
  * Label for one slide on the slides management list (slides.php).
  *
  * Prefers the stored slide name (set by the slide form or AI generation), then the
