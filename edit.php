@@ -109,32 +109,34 @@ if ($mform->is_cancelled()) {
     $fromform->id = $record->id;
     $fromform->slideshow = $cm->instance;
 
-    // Save editor files and persist rewritten content.
-    $fromform = file_postupdate_standard_editor(
-        $fromform,
-        'content',
-        $editoroptions,
-        $context,
-        'mod_slideshow',
-        'content',
-        (int) $record->id
-    );
-    $fromform->content = slideshow_sanitize_slide_content(
-        $fromform->content,
-        (int) $fromform->contentformat
-    );
-    $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $record->id]);
-    $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $record->id]);
+    // Title only does not show the body or the image, and the hidden fields are not submitted.
+    // Leave the stored body and image in place so a later layout change still has them.
+    if ($record->layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $fromform = file_postupdate_standard_editor(
+            $fromform,
+            'content',
+            $editoroptions,
+            $context,
+            'mod_slideshow',
+            'content',
+            (int) $record->id
+        );
+        $fromform->content = slideshow_sanitize_slide_content(
+            $fromform->content,
+            (int) $fromform->contentformat
+        );
+        $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $record->id]);
+        $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $record->id]);
 
-    // Title only hides the picker, but the draft still posts so a stored image is kept.
-    file_save_draft_area_files(
-        (int) ($fromform->image ?? 0),
-        $context->id,
-        'mod_slideshow',
-        'image',
-        (int) $record->id,
-        $imageoptions
-    );
+        file_save_draft_area_files(
+            (int) ($fromform->image ?? 0),
+            $context->id,
+            'mod_slideshow',
+            'image',
+            (int) $record->id,
+            $imageoptions
+        );
+    }
 
     $slide = $DB->get_record('slideshow_slide', ['id' => $record->id], '*', MUST_EXIST);
     if ($isnewslide) {
