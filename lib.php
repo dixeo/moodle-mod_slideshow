@@ -328,35 +328,36 @@ function slideshow_pluginfile($course, $cm, $context, $filearea, $args, $forcedo
         return false;
     }
 
-    if ($filearea === 'content') {
-        if (count($args) < 2) {
-            send_header_404();
-            die;
-        }
-        $itemid = (int) array_shift($args);
-        $filename = array_pop($args);
-        $filepath = $args ? '/' . implode('/', $args) . '/' : '/';
-
-        require_once("$CFG->dirroot/mod/slideshow/locallib.php");
-        if ($itemid > 0) {
-            $slide = $DB->get_record('slideshow_slide', [
-                'id' => $itemid,
-                'slideshow' => $cm->instance,
-            ], 'id,hidden', IGNORE_MISSING);
-            if (!$slide || !slideshow_user_can_view_slide_files($slide, $context)) {
-                return false;
-            }
-        } else if (!slideshow_user_can_view_slide_files(null, $context)) {
-            return false;
-        }
-
-        $options['immutable'] = true;
-    } else {
+    // Slide body files and the optional slide image use the same itemid and visibility rules.
+    if ($filearea !== 'content' && $filearea !== 'image') {
         return false;
     }
 
+    if (count($args) < 2) {
+        send_header_404();
+        die;
+    }
+    $itemid = (int) array_shift($args);
+    $filename = array_pop($args);
+    $filepath = $args ? '/' . implode('/', $args) . '/' : '/';
+
+    require_once("$CFG->dirroot/mod/slideshow/locallib.php");
+    if ($itemid > 0) {
+        $slide = $DB->get_record('slideshow_slide', [
+            'id' => $itemid,
+            'slideshow' => $cm->instance,
+        ], 'id,hidden', IGNORE_MISSING);
+        if (!$slide || !slideshow_user_can_view_slide_files($slide, $context)) {
+            return false;
+        }
+    } else if (!slideshow_user_can_view_slide_files(null, $context)) {
+        return false;
+    }
+
+    $options['immutable'] = true;
+
     $fs = get_file_storage();
-    $file = $fs->get_file($context->id, 'mod_slideshow', 'content', $itemid, $filepath, $filename);
+    $file = $fs->get_file($context->id, 'mod_slideshow', $filearea, $itemid, $filepath, $filename);
     // Do not fall back to legacy itemid 0 after authorizing a positive slide itemid (SLS-SEC-003).
     if (!$file || $file->is_directory()) {
         return false;

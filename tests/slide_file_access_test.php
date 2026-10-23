@@ -233,4 +233,61 @@ final class slide_file_access_test extends \advanced_testcase {
         $result = slideshow_pluginfile($course, $cm, $context, 'content', [$slideid, 'hidden.png'], false);
         $this->assertFalse($result);
     }
+
+    /**
+     * pluginfile denies a hidden slide image to students.
+     *
+     * @covers ::slideshow_pluginfile
+     */
+    public function test_pluginfile_denies_hidden_slide_image_for_viewers(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/lib.php');
+
+        $course = $this->getDataGenerator()->create_course();
+        $slideshow = $this->getDataGenerator()->create_module('slideshow', ['course' => $course->id]);
+        $context = \context_module::instance($slideshow->cmid);
+        $cm = get_coursemodule_from_id('slideshow', $slideshow->cmid);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $generator = $this->getDataGenerator()->get_plugin_generator('mod_slideshow');
+        $slideid = $generator->create_slide([
+            'slideshow' => $slideshow->id,
+            'hidden' => 1,
+        ]);
+
+        $fs = get_file_storage();
+        $fs->create_file_from_string([
+            'contextid' => $context->id,
+            'component' => 'mod_slideshow',
+            'filearea' => 'image',
+            'itemid' => $slideid,
+            'filepath' => '/',
+            'filename' => 'cover.png',
+        ], 'png');
+
+        $this->setUser($student);
+        $result = slideshow_pluginfile($course, $cm, $context, 'image', [$slideid, 'cover.png'], false);
+        $this->assertFalse($result);
+    }
+
+    /**
+     * pluginfile rejects a file area that is not slide content or the slide image.
+     *
+     * @covers ::slideshow_pluginfile
+     */
+    public function test_pluginfile_rejects_unknown_filearea(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/lib.php');
+
+        $course = $this->getDataGenerator()->create_course();
+        $slideshow = $this->getDataGenerator()->create_module('slideshow', ['course' => $course->id]);
+        $context = \context_module::instance($slideshow->cmid);
+        $cm = get_coursemodule_from_id('slideshow', $slideshow->cmid);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+
+        $this->setUser($student);
+        $result = slideshow_pluginfile($course, $cm, $context, 'intro', [1, 'cover.png'], false);
+        $this->assertFalse($result);
+    }
 }
