@@ -85,4 +85,5 @@ $string['slideshow:viewslides'] = 'Folien anzeigen';
 $string['slideslistnotitle'] = 'Unbenannte Folie';
 $string['slidetitle'] = 'Titel';
 $string['start'] = 'Slideshow starten';
+$string['textsize'] = 'Textgröße';
 $string['watermark'] = 'Powered by Dixeo';

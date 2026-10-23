@@ -85,4 +85,5 @@ $string['slideshow:viewslides'] = 'View slides';
 $string['slideslistnotitle'] = 'Untitled slide';
 $string['slidetitle'] = 'Title';
 $string['start'] = 'Start slideshow';
+$string['textsize'] = 'Text size';
 $string['watermark'] = 'Powered by Dixeo';

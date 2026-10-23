@@ -124,18 +124,6 @@ echo $OUTPUT->render_from_template('mod_slideshow/player', [
     'addslideurl' => (new moodle_url('/mod/slideshow/edit.php', ['cm' => $cm->id]))->out(false),
     'previcon' => $OUTPUT->pix_icon('t/collapsed_rtl', get_string('prev', 'slideshow')),
     'nexticon' => $OUTPUT->pix_icon('t/collapsed', get_string('next', 'slideshow')),
-    'decreaseicon' => $OUTPUT->pix_icon(
-        'e/styleparagraph',
-        get_string('decrease', 'slideshow'),
-        'core',
-        ['class' => 'decrease']
-    ),
-    'increaseicon' => $OUTPUT->pix_icon(
-        'e/styleparagraph',
-        get_string('increase', 'slideshow'),
-        'core',
-        ['class' => 'increase']
-    ),
     'fullscreenicon' => $OUTPUT->pix_icon('e/fullscreen', get_string('fullscreen', 'slideshow')),
 ]);
 echo $OUTPUT->footer();

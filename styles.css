@@ -23,6 +23,7 @@
  */
 
 body.path-mod-slideshow .slideshow-container {
+    position: relative;
     font-size: 1rem;
 }
 
@@ -35,7 +36,7 @@ body.path-mod-slideshow .slideshow-container .currentslide {
 
 body.path-mod-slideshow .slideshow-container.fullscreen {
     font-size: 3rem;
-    height: 1vh;
+    height: 100%;
     padding: 0;
     margin: 0;
 }
@@ -89,7 +90,9 @@ body.path-mod-slideshow .slideshow-container.fullscreen .slide .h6 {
     font-size: 0.9375em;
 }
 
+/* Content layer. The title, body, and image stay under the watermark, enrolment overlay, and controls. */
 body.path-mod-slideshow .slideshow-container > .slide {
+    z-index: 1;
     width: 100%;
     min-height: 440px;
     position: relative;
@@ -204,6 +207,8 @@ body.path-mod-slideshow .slideshow-container .slide-media {
 }
 
 body.path-mod-slideshow .slideshow-container .watermark {
+    position: relative;
+    z-index: 4;
     float: right;
     margin-top: -115px;
     pointer-events: none;
@@ -217,11 +222,14 @@ body.path-mod-slideshow .slideshow-container .watermark img {
 
 body.path-mod-slideshow .slideshow-container.fullscreen .watermark {
     position: absolute;
+    z-index: 4;
     right: 7px;
     bottom: 25px;
 }
 
 body.path-mod-slideshow .slideshow-container .slidecontrols {
+    position: relative;
+    z-index: 5;
     width: 100%;
     font-size: 1rem;
     background: #edf5fe;
@@ -248,20 +256,69 @@ body.path-mod-slideshow .slideshow-container .slidecontrols .controls {
     text-align: right;
 }
 
-body.path-mod-slideshow .slideshow-container .slidecontrols .decrease {
-    font-size: 10px;
-    margin: 0;
+body.path-mod-slideshow .slideshow-container .fontsize-control {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    margin-right: 12px;
+}
+
+body.path-mod-slideshow .slideshow-container .fontsize-toggle {
+    border: none;
+    background: none;
+    padding: 0;
+    color: #138df0;
+    line-height: 1;
+    cursor: pointer;
+}
+
+body.path-mod-slideshow .slideshow-container .fontsize-a {
+    font-weight: 700;
+}
+
+body.path-mod-slideshow .slideshow-container .fontsize-a-small {
+    font-size: 0.7rem;
+}
+
+body.path-mod-slideshow .slideshow-container .fontsize-a-large {
+    font-size: 1.15rem;
+    margin-left: 0.15rem;
+}
+
+body.path-mod-slideshow .slideshow-container .fontsize-panel {
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-right: 0.35rem;
+    padding: 0.2rem 0.4rem;
+    background: #fff;
+    border: 1px solid #d5dde8;
+    border-radius: 0.25rem;
+}
+
+body.path-mod-slideshow .slideshow-container .fontsize-panel[hidden] {
+    display: none;
+}
+
+body.path-mod-slideshow .slideshow-container .fontsize-step {
+    border: none;
+    background: none;
+    padding: 0 0.2rem;
+    color: #138df0;
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
 }
 
 body.path-mod-slideshow .slideshow-container .slidecontrols .fontsize {
-    margin-top: -6px;
-    margin-right: 2px;
-    width: 60px;
-    height: 12px;
-}
-
-body.path-mod-slideshow .slideshow-container .slidecontrols .increase {
-    margin-right: 20px;
+    width: 9rem;
+    height: 1.25rem;
+    margin: 0;
 }
 
 body.path-mod-slideshow .slideshow-container .slidecontrols .prev,
@@ -279,6 +336,7 @@ body.path-mod-slideshow .slideshow-container .slidecontrols .next.disabled {
 }
 
 body.path-mod-slideshow .slideshow-container.fullscreen .slidecontrols {
+    z-index: 5;
     height: 52px;
     position: absolute;
     bottom: 0;
@@ -293,9 +351,12 @@ body.path-mod-slideshow .slideshow-container.fullscreen .slidecontrols .icon {
     color: rgba(0, 0, 0, 0.4);
 }
 
-body.path-mod-slideshow .slideshow-container.fullscreen .slidecontrols .decrease {
-    font-size: 18px;
-    margin-right: 5px;
+body.path-mod-slideshow .slideshow-container.fullscreen .fontsize-a-small {
+    font-size: 0.95rem;
+}
+
+body.path-mod-slideshow .slideshow-container.fullscreen .fontsize-a-large {
+    font-size: 1.5rem;
 }
 
 body.path-mod-slideshow .slideshow-container.fullscreen .slidecontrols .navbuttons {
@@ -310,7 +371,6 @@ body.path-mod-slideshow .slideshow-container.fullscreen .slidecontrols .disabled
     opacity: 0.65;
 }
 
-body.path-mod-slideshow .slideshow-container.fullscreen .slidecontrols .increase,
 body.path-mod-slideshow .slideshow-container.fullscreen .slidecontrols .qrcode,
 body.path-mod-slideshow .slideshow-container.fullscreen .slidecontrols .fullscreen {
     margin-right: 30px;
@@ -323,16 +383,19 @@ body.path-mod-slideshow .slideshow-container .slidecontrols .fullscreen {
     padding: 0;
 }
 
-body.path-mod-slideshow .slideshow-container.fullscreen #fontsize-slider {
-    opacity: 0.4;
+body.path-mod-slideshow .slideshow-container.fullscreen .fontsize-toggle,
+body.path-mod-slideshow .slideshow-container.fullscreen .fontsize-step {
+    color: rgba(0, 0, 0, 0.55);
 }
 
 body.path-mod-slideshow .slideshow-container .overlay {
     position: absolute;
+    z-index: 3;
+    top: 0;
+    left: 0;
     min-height: 440px;
     display: block;
     background-color: rgba(0, 0, 0, .95);
-    z-index: 2;
     cursor: pointer;
     color: white;
     font-size: 35px;
@@ -356,8 +419,17 @@ body.path-mod-slideshow .slideshow-container .overlay .scantoenrol {
 }
 
 body.path-mod-slideshow .slideshow-container.fullscreen .overlay .scantoenrol {
-    -ms-transform: scale(2) translate(-25%, -25%);
-    transform: scale(2) translate(-25%, -25%);
+    -ms-transform: translate(-50%, -50%) scale(2);
+    transform: translate(-50%, -50%) scale(2);
+}
+
+body.path-mod-slideshow .slideshow-container .overlay .scantoenrol canvas,
+body.path-mod-slideshow .slideshow-container .overlay .scantoenrol img,
+body.path-mod-slideshow .slideshow-container .overlay .scantoenrol svg {
+    display: block;
+    margin: 0.75rem auto 0;
+    background-color: #fff;
+    padding: 0.75rem;
 }
 
 body.path-mod-slideshow .slideshow-container .slidecontrols .qrcode {

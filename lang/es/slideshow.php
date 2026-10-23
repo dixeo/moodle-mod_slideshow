@@ -85,4 +85,5 @@ $string['slideshow:viewslides'] = 'Ver diapositivas';
 $string['slideslistnotitle'] = 'Diapositiva sin título';
 $string['slidetitle'] = 'Título';
 $string['start'] = 'Iniciar presentación';
+$string['textsize'] = 'Tamaño del texto';
 $string['watermark'] = 'Desarrollado por Dixeo';
