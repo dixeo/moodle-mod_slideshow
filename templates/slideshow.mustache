@@ -40,7 +40,8 @@
                 "id": 10,
                 "index": "1",
                 "name": "Introduction",
-                "hidden": false
+                "hidden": false,
+                "preview": "<div class=\"slide-list-thumb\"></div>"
             }
         ]
     }
@@ -51,6 +52,7 @@
         {{#slides}}
             <li class="slide-item no-swipe group" data-sortorder="{{sortorder}}" data-id="{{id}}">
                 <div class="handle instant">{{index}}</div>
+                {{{preview}}}
                 <div class="name">{{name}}</div>
                 <div class="actions">
                     <button title="{{#str}}delete, slideshow{{/str}}" class="delete btn btn-default">

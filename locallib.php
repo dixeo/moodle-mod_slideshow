@@ -271,9 +271,10 @@ function slideshow_normalize_layout(?string $layout): string {
  *
  * @param \context $context Module context.
  * @param int $slideid Slide id, used as the file itemid.
+ * @param bool $thumbnail True to request Moodle's cached thumb preview instead of the original file.
  * @return string|null URL, or null when the slide has no image.
  */
-function slideshow_get_slide_image_url(\context $context, int $slideid): ?string {
+function slideshow_get_slide_image_url(\context $context, int $slideid, bool $thumbnail = false): ?string {
     $fs = get_file_storage();
     $files = $fs->get_area_files(
         $context->id,
@@ -287,14 +288,18 @@ function slideshow_get_slide_image_url(\context $context, int $slideid): ?string
         if ($file->is_directory()) {
             continue;
         }
-        return moodle_url::make_pluginfile_url(
+        $url = moodle_url::make_pluginfile_url(
             $context->id,
             'mod_slideshow',
             'image',
             $slideid,
             $file->get_filepath(),
             $file->get_filename()
-        )->out(false);
+        );
+        if ($thumbnail) {
+            return $url->out(false, ['preview' => 'thumb']);
+        }
+        return $url->out(false);
     }
     return null;
 }
@@ -363,6 +368,47 @@ function slideshow_render_slide_html(
         'data-slideid' => (int) ($slide->id ?? 0),
         'data-layout' => $layout,
     ]);
+}
+
+/**
+ * Miniature of one slide for the slides management list.
+ *
+ * Uses the player markup, scaled by CSS. An image is the cached thumb preview, not the original file.
+ *
+ * @param stdClass $slide Slide row.
+ * @param \context $context Module context.
+ * @return string
+ */
+function slideshow_get_slide_list_preview_html(stdClass $slide, \context $context): string {
+    $layout = slideshow_normalize_layout($slide->layout ?? null);
+    $content = '';
+    $imageurl = null;
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $content = file_rewrite_pluginfile_urls(
+            (string) ($slide->content ?? ''),
+            'pluginfile.php',
+            $context->id,
+            'mod_slideshow',
+            'content',
+            (int) $slide->id
+        );
+        $formatoptions = new stdClass();
+        $formatoptions->overflowdiv = false;
+        $formatoptions->context = $context;
+        $content = format_text($content, (int) ($slide->contentformat ?? FORMAT_HTML), $formatoptions);
+        $content = slideshow_balance_slide_html($content, (int) $slide->id);
+    }
+    if (
+        $layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT
+    ) {
+        $imageurl = slideshow_get_slide_image_url($context, (int) $slide->id, true);
+    }
+
+    $slidehtml = slideshow_render_slide_html($slide, $content, $imageurl, false);
+    $scaled = html_writer::div($slidehtml, 'slideshow-container slide-list-thumb-scale');
+    return html_writer::div($scaled, 'slide-list-thumb', ['aria-hidden' => 'true']);
 }
 
 /**

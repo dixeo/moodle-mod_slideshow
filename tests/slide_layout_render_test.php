@@ -163,4 +163,56 @@ final class slide_layout_render_test extends \advanced_testcase {
         $this->assertStringNotContainsString('<script>', $html);
         $this->assertStringContainsString('alert(1)', $html);
     }
+
+    /**
+     * The slides-page thumbnail uses player markup and the cached image preview.
+     *
+     * @covers ::slideshow_get_slide_list_preview_html
+     */
+    public function test_list_preview_uses_player_markup_and_thumb_url(): void {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course();
+        $slideshow = $this->getDataGenerator()->create_module('slideshow', ['course' => $course->id]);
+        $context = \context_module::instance($slideshow->cmid);
+
+        $generator = $this->getDataGenerator()->get_plugin_generator('mod_slideshow');
+        $titleonly = $DB->get_record('slideshow_slide', ['id' => $generator->create_slide([
+            'slideshow' => $slideshow->id,
+            'name' => 'Title slide',
+            'layout' => MOD_SLIDESHOW_LAYOUT_TITLEONLY,
+            'content' => '<p>Kept body</p>',
+        ])], '*', MUST_EXIST);
+        $titlehtml = slideshow_get_slide_list_preview_html($titleonly, $context);
+        $this->assertStringContainsString('slide-list-thumb', $titlehtml);
+        $this->assertStringContainsString('layout-titleonly', $titlehtml);
+        $this->assertStringNotContainsString('slide-body', $titlehtml);
+        $this->assertStringNotContainsString('preview=thumb', $titlehtml);
+
+        $slide = $DB->get_record('slideshow_slide', ['id' => $generator->create_slide([
+            'slideshow' => $slideshow->id,
+            'name' => 'Photo slide',
+            'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+            'content' => '<p>Setbacks</p>',
+        ])], '*', MUST_EXIST);
+        $fs = get_file_storage();
+        $fs->create_file_from_string([
+            'contextid' => $context->id,
+            'component' => 'mod_slideshow',
+            'filearea' => 'image',
+            'itemid' => $slide->id,
+            'filepath' => '/',
+            'filename' => 'cover.png',
+        ], 'png');
+
+        $html = slideshow_get_slide_list_preview_html($slide, $context);
+        $this->assertStringContainsString('layout-background', $html);
+        $this->assertStringContainsString('has-image', $html);
+        $this->assertStringContainsString('slide-backdrop', $html);
+        $this->assertStringContainsString('preview=thumb', $html);
+        $this->assertStringContainsString('Setbacks', $html);
+    }
 }

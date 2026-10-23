@@ -77,6 +77,7 @@ foreach ($slides as $slide) {
         'sortorder' => $slide->sortorder,
         'index' => $displayindex,
         'hidden' => $slide->hidden,
+        'preview' => slideshow_get_slide_list_preview_html($slide, $context),
     ];
     $displayindex++;
 }

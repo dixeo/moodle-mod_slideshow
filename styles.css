@@ -388,6 +388,10 @@ body.path-mod-slideshow #slide-list .group:after {
 }
 
 body.path-mod-slideshow #slide-list .slide-item {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
     width: 100%;
     padding: 10px;
     margin: 10px 0;
@@ -406,11 +410,11 @@ body.path-mod-slideshow #slide-list .slide-item .slip-reordering {
 }
 
 body.path-mod-slideshow #slide-list .slide-item .handle {
-    float: left;
+    flex: 0 0 auto;
     color: gray;
     text-align: center;
     font-weight: bold;
-    width: 5%;
+    width: auto;
 }
 
 body.path-mod-slideshow #slide-list .slide-item .handle:after {
@@ -423,21 +427,59 @@ body.path-mod-slideshow #slide-list .slide-item .handle:after {
 }
 
 body.path-mod-slideshow #slide-list .slide-item .name {
+    flex: 1 1 auto;
+    min-width: 0;
     font-weight: 700;
-    display: inline-block;
-    width: 79%;
-    padding-left: 10px;
+    width: auto;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    vertical-align: top;
 }
 
 body.path-mod-slideshow #slide-list .slide-item .actions {
-    display: inline-block;
-    width: 15%;
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: auto;
     text-align: right;
-    vertical-align: top;
+}
+
+/* Scaled player markup. 640px at 0.2 fills the 128px by 72px frame. */
+body.path-mod-slideshow #slide-list .slide-list-thumb {
+    position: relative;
+    flex: 0 0 auto;
+    width: 128px;
+    height: 72px;
+    overflow: hidden;
+    border-radius: 0.25rem;
+    pointer-events: none;
+}
+
+body.path-mod-slideshow #slide-list .slide-list-thumb-scale {
+    width: 640px;
+    transform: scale(0.2);
+    transform-origin: top left;
+}
+
+body.path-mod-slideshow #slide-list .slide-list-thumb .slideshow-container > .slide {
+    box-sizing: border-box;
+    width: 640px;
+    height: 360px;
+    min-height: 0;
+    overflow: hidden;
+    border-bottom: 10px solid #edf5fe;
+}
+
+/* Player bodies scroll. A thumbnail must clip instead, including nested content. */
+body.path-mod-slideshow #slide-list .slide-list-thumb,
+body.path-mod-slideshow #slide-list .slide-list-thumb * {
+    overflow: hidden;
+    scrollbar-width: none;
+}
+
+body.path-mod-slideshow #slide-list .slide-list-thumb *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 body.path-mod-slideshow #slide-list .actions button {
@@ -451,17 +493,9 @@ body.path-mod-slideshow #slide-list .actions button i {
 }
 
 @media (max-width: 678px) {
-    body.path-mod-slideshow #slide-list .slide-item .handle {
-        width: 10%;
-    }
-
-    body.path-mod-slideshow #slide-list .slide-item .name {
-        width: 90%;
-    }
-
     body.path-mod-slideshow #slide-list .slide-item .actions {
-        margin-top: 15px;
-        width: 100%;
+        flex-basis: 100%;
+        margin-left: 0;
     }
 }
 
