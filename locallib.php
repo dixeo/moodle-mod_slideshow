@@ -78,6 +78,62 @@ function slideshow_get_editor_options($context) {
 }
 
 /**
+ * File picker options for the single slide image.
+ *
+ * @return array
+ */
+function slideshow_get_image_file_options(): array {
+    global $CFG;
+    return [
+        'subdirs' => 0,
+        'maxbytes' => $CFG->maxbytes,
+        'maxfiles' => 1,
+        'accepted_types' => ['web_image'],
+    ];
+}
+
+/**
+ * Whether submitted slide HTML counts as content.
+ *
+ * Plain text counts, and so does a body that only embeds media. Empty markup does not.
+ *
+ * @param array $data Submitted form values. content_editor may be a string or an editor array.
+ * @return bool
+ */
+function slideshow_slide_content_is_present(array $data): bool {
+    $editor = $data['content_editor'] ?? '';
+    $raw = is_array($editor) ? (string) ($editor['text'] ?? '') : (string) $editor;
+    $raw = trim($raw);
+    if ($raw === '') {
+        return false;
+    }
+    if (trim(strip_tags($raw)) !== '') {
+        return true;
+    }
+    return (bool) preg_match('/<(img|video|audio|iframe|object|embed)\b/i', $raw);
+}
+
+/**
+ * Server-side checks for the slide edit form.
+ *
+ * Content is required for every layout except title only. Unknown layouts are rejected.
+ *
+ * @param array $data Submitted form values.
+ * @return array Field name => error message. Empty when the submission is valid.
+ */
+function slideshow_validate_slide_submission(array $data): array {
+    $errors = [];
+    $layout = $data['layout'] ?? '';
+    if (!is_string($layout) || !isset(slideshow_get_layouts()[$layout])) {
+        $errors['layoutgroup'] = get_string('layoutinvalid', 'slideshow');
+    }
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY && !slideshow_slide_content_is_present($data)) {
+        $errors['content_editor'] = get_string('contentrequired', 'slideshow');
+    }
+    return $errors;
+}
+
+/**
  * Whether an existing slide opens in the Dixeo editor.
  *
  * local_dixeo_editor depends on local_dixeo. A missing editor plugin, a missing
@@ -133,7 +189,7 @@ function slideshow_user_can_view_slide_files(?stdClass $slide, \context $context
  *
  * Only whitelisted columns are copied; the owning slideshow id is always taken from the course module.
  *
- * @param stdClass $fromform Form data with name, hidden, and id when updating.
+ * @param stdClass $fromform Form data with name, layout, hidden, and id when updating.
  * @param int $slideshowid Owning slideshow instance id ($cm->instance).
  * @param bool $isnewslide True when creating a new slide.
  * @param int $sortorder Sort order for new slides only.
@@ -147,6 +203,7 @@ function slideshow_prepare_slide_save_record(
 ): stdClass {
     $record = new stdClass();
     $record->name = $fromform->name;
+    $record->layout = slideshow_normalize_layout($fromform->layout ?? null);
     $record->hidden = (int) $fromform->hidden;
     $record->slideshow = $slideshowid;
     $record->timemodified = time();

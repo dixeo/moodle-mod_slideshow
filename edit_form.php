@@ -36,7 +36,7 @@ class mod_slideshow_slide_edit_form extends moodleform {
      * Define form fields.
      */
     protected function definition() {
-        global $CFG;
+        global $CFG, $OUTPUT;
 
         $mform = $this->_form;
         $customdata = $this->_customdata;
@@ -44,7 +44,7 @@ class mod_slideshow_slide_edit_form extends moodleform {
         $cm = $customdata['cm'];
 
         $mform->addElement('header', 'contentsection', get_string('contentheader', 'slideshow'));
-        $mform->addElement('text', 'name', get_string('name'), ['size' => '48']);
+        $mform->addElement('text', 'name', get_string('slidetitle', 'slideshow'), ['size' => '48']);
         if (!empty($CFG->formatstringstriptags)) {
             $mform->setType('name', PARAM_TEXT);
         } else {
@@ -53,6 +53,38 @@ class mod_slideshow_slide_edit_form extends moodleform {
         $mform->addRule('name', null, 'required', null, 'client');
         $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
 
+        $layouts = [];
+        foreach (slideshow_get_layouts() as $value => $stringkey) {
+            $thumb = html_writer::empty_tag('img', [
+                'src' => $OUTPUT->image_url('layout_' . $value, 'slideshow')->out(false),
+                'alt' => '',
+                'class' => 'slideshow-layout-thumb',
+            ]);
+            $label = html_writer::div(
+                $thumb . html_writer::div(get_string($stringkey, 'slideshow'), 'slideshow-layout-name'),
+                'slideshow-layout-choice'
+            );
+            $layouts[] = $mform->createElement('radio', 'layout', '', $label, $value);
+        }
+        $mform->addGroup(
+            $layouts,
+            'layoutgroup',
+            get_string('layout', 'slideshow'),
+            '',
+            false,
+            ['class' => 'slideshow-layout-group']
+        );
+        $mform->setDefault('layout', MOD_SLIDESHOW_LAYOUT_BACKGROUND);
+
+        $mform->addElement(
+            'filepicker',
+            'image',
+            get_string('image', 'slideshow'),
+            null,
+            slideshow_get_image_file_options()
+        );
+        $mform->hideIf('image', 'layout', 'eq', MOD_SLIDESHOW_LAYOUT_TITLEONLY);
+
         $mform->addElement(
             'editor',
             'content_editor',
@@ -60,7 +92,7 @@ class mod_slideshow_slide_edit_form extends moodleform {
             null,
             slideshow_get_editor_options($context)
         );
-        $mform->addRule('content_editor', get_string('required'), 'required', null, 'client');
+        $mform->hideIf('content_editor', 'layout', 'eq', MOD_SLIDESHOW_LAYOUT_TITLEONLY);
 
         $this->add_action_buttons();
 
@@ -74,5 +106,17 @@ class mod_slideshow_slide_edit_form extends moodleform {
         $mform->addElement('hidden', 'hidden');
         $mform->setType('hidden', PARAM_INT);
         $mform->setDefault('hidden', 0);
+    }
+
+    /**
+     * Require slide content unless the layout is title only, and reject unknown layouts.
+     *
+     * @param array $data Submitted form data.
+     * @param array $files Uploaded files.
+     * @return array Field name => error message.
+     */
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+        return array_merge($errors, slideshow_validate_slide_submission($data));
     }
 }

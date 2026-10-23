@@ -44,6 +44,7 @@ if ($slideid && slideshow_use_dixeo_editor($context)) {
 
 $returnurl = new moodle_url('/mod/slideshow/slides.php', ['id' => $cm->id]);
 $editoroptions = slideshow_get_editor_options($context);
+$imageoptions = slideshow_get_image_file_options();
 
 $slide = new stdClass();
 if ($slideid) {
@@ -55,8 +56,21 @@ if ($slideid) {
 } else {
     $slide->content = '';
     $slide->contentformat = FORMAT_HTML;
+    $slide->layout = MOD_SLIDESHOW_LAYOUT_BACKGROUND;
     $slide = file_prepare_standard_editor($slide, 'content', $editoroptions, $context, 'mod_slideshow', 'content', 0);
 }
+
+$imagedraftid = file_get_submitted_draft_itemid('image');
+file_prepare_draft_area(
+    $imagedraftid,
+    $context->id,
+    'mod_slideshow',
+    'image',
+    $slideid ? (int) $slideid : 0,
+    $imageoptions
+);
+$slide->image = $imagedraftid;
+$slide->layout = slideshow_normalize_layout($slide->layout ?? null);
 
 $url = new moodle_url('/mod/slideshow/edit.php', ['cm' => $cm->id, 'id' => $slideid]);
 $PAGE->set_url($url);
@@ -111,6 +125,16 @@ if ($mform->is_cancelled()) {
     );
     $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $record->id]);
     $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $record->id]);
+
+    // Title only hides the picker, but the draft still posts so a stored image is kept.
+    file_save_draft_area_files(
+        (int) ($fromform->image ?? 0),
+        $context->id,
+        'mod_slideshow',
+        'image',
+        (int) $record->id,
+        $imageoptions
+    );
 
     $slide = $DB->get_record('slideshow_slide', ['id' => $record->id], '*', MUST_EXIST);
     if ($isnewslide) {

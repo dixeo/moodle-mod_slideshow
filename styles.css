@@ -386,3 +386,69 @@ body.path-mod-slideshow .slideshow-container .pexels-credits,
 body.path-mod-slideshow .slideshow-container.fullscreen .pexels-credits {
     font-size: 0.8rem;
 }
+
+/* Layout picker on the slide edit form. */
+body.path-mod-slideshow #fgroup_id_layoutgroup fieldset > div {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+    gap: 0.75rem 1rem;
+}
+
+body.path-mod-slideshow #fgroup_id_layoutgroup .form-check-inline {
+    position: relative;
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    align-self: flex-start;
+    margin: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+body.path-mod-slideshow #fgroup_id_layoutgroup input[type="radio"] {
+    position: absolute;
+    width: 0;
+    height: 0;
+    margin: 0;
+    opacity: 0;
+}
+
+body.path-mod-slideshow .slideshow-layout-choice {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 7.5rem;
+    text-align: center;
+}
+
+body.path-mod-slideshow .slideshow-layout-thumb {
+    display: block;
+    width: 7.5rem;
+    height: 5rem;
+    box-sizing: border-box;
+    border: 3px solid #d5dde8;
+    border-radius: 0.25rem;
+    background: #fff;
+    vertical-align: top;
+}
+
+body.path-mod-slideshow .slideshow-layout-name {
+    margin-top: 0.35rem;
+    font-size: 0.875rem;
+    font-weight: normal;
+}
+
+body.path-mod-slideshow #fgroup_id_layoutgroup input[type="radio"]:checked + .slideshow-layout-choice .slideshow-layout-thumb {
+    border-color: #0f6cbf;
+}
+
+body.path-mod-slideshow #fgroup_id_layoutgroup input[type="radio"]:checked + .slideshow-layout-choice .slideshow-layout-name {
+    font-weight: bold;
+}
+
+body.path-mod-slideshow #fgroup_id_layoutgroup label:focus-within .slideshow-layout-thumb {
+    outline: 2px solid #0f6cbf;
+    outline-offset: 2px;
+}
