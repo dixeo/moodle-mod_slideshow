@@ -162,8 +162,52 @@ function slideshow_prepare_slide_save_record(
     return $record;
 }
 
+/** @var string Slide shows a centered title and no body or image. */
+define('MOD_SLIDESHOW_LAYOUT_TITLEONLY', 'titleonly');
+
+/** @var string Slide image fills the background, with the title and body on top. No image keeps the light slide. */
+define('MOD_SLIDESHOW_LAYOUT_BACKGROUND', 'background');
+
+/** @var string Title on top, image on the left, text on the right. */
+define('MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT', 'contentright');
+
+/** @var string Title on top, text on the left, image on the right. */
+define('MOD_SLIDESHOW_LAYOUT_CONTENTLEFT', 'contentleft');
+
 /** @var int Default max length for slide titles on the slides management list. */
 define('MOD_SLIDESHOW_SLIDE_LIST_LABEL_MAX', 80);
+
+/**
+ * Layout values the edit form and the player accept.
+ *
+ * @return array<string, string> Layout value => language string key in mod_slideshow.
+ */
+function slideshow_get_layouts(): array {
+    return [
+        MOD_SLIDESHOW_LAYOUT_TITLEONLY => 'layout_titleonly',
+        MOD_SLIDESHOW_LAYOUT_BACKGROUND => 'layout_background',
+        MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT => 'layout_contentright',
+        MOD_SLIDESHOW_LAYOUT_CONTENTLEFT => 'layout_contentleft',
+    ];
+}
+
+/**
+ * Return a known layout, or background when the value is missing or unknown.
+ *
+ * An empty image on that background keeps the title and body on the light slide,
+ * which is how slides created before layouts, and slides created without one, are shown.
+ *
+ * @param string|null $layout Stored or submitted layout.
+ * @return string One of the MOD_SLIDESHOW_LAYOUT_* values.
+ */
+function slideshow_normalize_layout(?string $layout): string {
+    $layouts = slideshow_get_layouts();
+    $layout = (string) $layout;
+    if (isset($layouts[$layout])) {
+        return $layout;
+    }
+    return MOD_SLIDESHOW_LAYOUT_BACKGROUND;
+}
 
 /**
  * Label for one slide on the slides management list (slides.php).

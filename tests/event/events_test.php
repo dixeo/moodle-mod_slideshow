@@ -47,6 +47,7 @@ final class events_test extends \advanced_testcase {
             'name' => 'Test slide',
             'content' => '<p>Test</p>',
             'contentformat' => FORMAT_HTML,
+            'layout' => 'background',
             'hidden' => 0,
             'sortorder' => 0,
             'timemodified' => time(),

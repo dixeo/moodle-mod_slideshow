@@ -68,6 +68,7 @@ class mod_slideshow_generator extends testing_module_generator {
             'name' => 'Test slide',
             'content' => '',
             'contentformat' => FORMAT_HTML,
+            'layout' => 'background',
             'hidden' => 0,
             'sortorder' => 0,
             'timemodified' => time(),
