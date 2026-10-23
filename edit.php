@@ -38,8 +38,7 @@ require_course_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/slideshow:viewslides', $context);
 
-$pluginmanager = \core_plugin_manager::instance();
-if ($slideid && $pluginmanager->get_plugin_info('local_dixeo_editor')) {
+if ($slideid && slideshow_use_dixeo_editor($context)) {
     redirect(new moodle_url('/local/dixeo_editor/content_edition.php', ['cmid' => $cmid, 'slideid' => $slideid]));
 }
 

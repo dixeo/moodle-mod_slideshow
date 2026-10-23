@@ -78,6 +78,25 @@ function slideshow_get_editor_options($context) {
 }
 
 /**
+ * Whether an existing slide opens in the Dixeo editor.
+ *
+ * local_dixeo_editor depends on local_dixeo. A missing editor plugin, a missing
+ * settings class, or Dixeo off for this module keeps the Moodle slide form.
+ *
+ * @param context $context Module context.
+ * @return bool
+ */
+function slideshow_use_dixeo_editor(context $context): bool {
+    if (!\core_plugin_manager::instance()->get_plugin_info('local_dixeo_editor')) {
+        return false;
+    }
+    if (!class_exists(\local_dixeo\external\service_factory::class)) {
+        return false;
+    }
+    return \local_dixeo\external\service_factory::get_settings_config()->enabled_for($context);
+}
+
+/**
  * Sanitize slide HTML for storage (defense in depth; same policy as display cleaning).
  *
  * @param string $content Raw slide HTML.
