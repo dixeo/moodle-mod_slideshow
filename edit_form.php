@@ -43,7 +43,16 @@ class mod_slideshow_slide_edit_form extends moodleform {
         $context = $customdata['context'];
         $cm = $customdata['cm'];
 
+        // Visual only. This markup is not a form field and is not stored.
+        $mform->addElement('header', 'previewsection', get_string('preview', 'slideshow'));
+        $mform->setExpanded('previewsection', true);
+        $mform->addElement('html', html_writer::div('', 'slideshow-container slideshow-slide-preview', [
+            'id' => 'slideshow-slide-preview',
+            'aria-hidden' => 'true',
+        ]));
+
         $mform->addElement('header', 'contentsection', get_string('contentheader', 'slideshow'));
+        $mform->setExpanded('contentsection', true);
         $mform->addElement('text', 'name', get_string('slidetitle', 'slideshow'), ['size' => '48']);
         if (!empty($CFG->formatstringstriptags)) {
             $mform->setType('name', PARAM_TEXT);

@@ -65,6 +65,7 @@ $string['popupheightexplain'] = 'Specifica l\'altezza predefinita delle finestre
 $string['popupwidth'] = 'Larghezza del pop-up (in pixel)';
 $string['popupwidthexplain'] = 'Specifica la larghezza predefinita delle finestre pop-up.';
 $string['prev'] = 'Diapositiva precedente';
+$string['preview'] = 'Anteprima';
 $string['printintro'] = 'Visualizza descrizione della presentazione';
 $string['printintroexplain'] = 'Visualizzare la descrizione della presentazione sopra il contenuto?';
 $string['printlastmodified'] = 'Visualizza data ultima modifica';

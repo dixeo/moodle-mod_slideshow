@@ -65,6 +65,7 @@ $string['popupheightexplain'] = 'Especifica a altura predefinida das janelas pop
 $string['popupwidth'] = 'Largura do pop-up (em pixels)';
 $string['popupwidthexplain'] = 'Especifica a largura predefinida das janelas pop-up.';
 $string['prev'] = 'Diapositivo anterior';
+$string['preview'] = 'Pré-visualização';
 $string['printintro'] = 'Mostrar descrição da apresentação';
 $string['printintroexplain'] = 'Mostrar descrição da apresentação acima do conteúdo?';
 $string['printlastmodified'] = 'Mostrar data da última alteração';

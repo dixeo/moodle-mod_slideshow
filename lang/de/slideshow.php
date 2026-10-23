@@ -65,6 +65,7 @@ $string['popupheightexplain'] = 'Standardhöhe der Popup-Fenster.';
 $string['popupwidth'] = 'Popup-Breite (in Pixel)';
 $string['popupwidthexplain'] = 'Standardbreite der Popup-Fenster.';
 $string['prev'] = 'Vorherige Folie';
+$string['preview'] = 'Vorschau';
 $string['printintro'] = 'Slideshow-Beschreibung anzeigen';
 $string['printintroexplain'] = 'Slideshow-Beschreibung über dem Inhalt anzeigen?';
 $string['printlastmodified'] = 'Letztes Änderungsdatum anzeigen';

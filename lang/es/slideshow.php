@@ -65,6 +65,7 @@ $string['popupheightexplain'] = 'Especifica la altura predeterminada de las vent
 $string['popupwidth'] = 'Ancho de la ventana emergente (en píxeles)';
 $string['popupwidthexplain'] = 'Especifica el ancho predeterminado de las ventanas emergentes.';
 $string['prev'] = 'Diapositiva anterior';
+$string['preview'] = 'Vista previa';
 $string['printintro'] = 'Mostrar descripción de la presentación de diapositivas';
 $string['printintroexplain'] = '¿Mostrar descripción de la presentación de diapositivas encima del contenido?';
 $string['printlastmodified'] = 'Mostrar fecha de última modificación';

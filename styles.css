@@ -541,3 +541,12 @@ body.path-mod-slideshow #fgroup_id_layoutgroup label:focus-within .slideshow-lay
     outline: 2px solid #0f6cbf;
     outline-offset: 2px;
 }
+
+/* Unsaved slide preview on the edit form. The player omits the bottom border for the control bar. */
+body.path-mod-slideshow .slideshow-slide-preview {
+    margin-bottom: 1rem;
+}
+
+body.path-mod-slideshow .slideshow-slide-preview > .slide {
+    border-bottom: 10px solid #edf5fe;
+}

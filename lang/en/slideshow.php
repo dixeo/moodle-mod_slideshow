@@ -65,6 +65,7 @@ $string['popupheightexplain'] = 'Specifies default height of popup windows.';
 $string['popupwidth'] = 'Pop-up width (in pixels)';
 $string['popupwidthexplain'] = 'Specifies default width of popup windows.';
 $string['prev'] = 'Previous slide';
+$string['preview'] = 'Preview';
 $string['printintro'] = 'Display slideshow description';
 $string['printintroexplain'] = 'Display slideshow description above content?';
 $string['printlastmodified'] = 'Display last modified date';
