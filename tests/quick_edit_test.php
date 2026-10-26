@@ -50,6 +50,7 @@ final class quick_edit_test extends \advanced_testcase {
             'name' => 'Updated title',
             'layout' => MOD_SLIDESHOW_LAYOUT_CONTENTLEFT,
             'image' => 0,
+            'content_editor' => $this->editor_payload('<p>Keep this body</p>'),
         ]);
 
         $updated = $this->reload_slide((int) $slide->id);
@@ -90,6 +91,7 @@ final class quick_edit_test extends \advanced_testcase {
             'name' => 'With image',
             'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
             'image' => $draftid,
+            'content_editor' => $this->editor_payload('<p>Body</p>'),
         ]);
 
         $this->assertSame([], $result['errors']);
@@ -130,6 +132,7 @@ final class quick_edit_test extends \advanced_testcase {
             'name' => 'No image',
             'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
             'image' => $draftid,
+            'content_editor' => $this->editor_payload('<p>Body</p>'),
         ]);
 
         $this->assertSame([], $result['errors']);
@@ -154,6 +157,7 @@ final class quick_edit_test extends \advanced_testcase {
             'name' => 'Title only',
             'layout' => MOD_SLIDESHOW_LAYOUT_TITLEONLY,
             'image' => 0,
+            'content_editor' => $this->editor_payload('<p>Replacement that must not be stored</p>'),
         ]);
 
         $updated = $this->reload_slide((int) $slide->id);
@@ -187,6 +191,58 @@ final class quick_edit_test extends \advanced_testcase {
         $this->assertArrayHasKey('layoutgroup', $result['errors']);
         $this->assertSame('Test slide', $updated->name);
         $this->assertSame(MOD_SLIDESHOW_LAYOUT_BACKGROUND, $updated->layout);
+    }
+
+    /**
+     * The Moodle editor body is stored for layouts that show content.
+     *
+     * @covers ::slideshow_save_quick_edit
+     */
+    public function test_save_stores_editor_content(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        [$slide, $context] = $this->create_slide('<p>Old body</p>');
+        $this->setAdminUser();
+
+        $result = slideshow_save_quick_edit($slide, $context, (object) [
+            'name' => 'Test slide',
+            'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+            'image' => 0,
+            'content_editor' => $this->editor_payload('<p>New body</p>'),
+        ]);
+
+        $updated = $this->reload_slide((int) $slide->id);
+        $this->assertSame([], $result['errors']);
+        $this->assertStringContainsString('New body', $updated->content);
+        $this->assertStringContainsString('New body', $result['html']);
+    }
+
+    /**
+     * A layout that shows the body rejects an empty editor.
+     *
+     * @covers ::slideshow_save_quick_edit
+     */
+    public function test_empty_content_is_rejected(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        [$slide, $context] = $this->create_slide('<p>Keep</p>');
+        $this->setAdminUser();
+
+        $result = slideshow_save_quick_edit($slide, $context, (object) [
+            'name' => 'Changed',
+            'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+            'image' => 0,
+            'content_editor' => $this->editor_payload('<p></p>'),
+        ]);
+
+        $updated = $this->reload_slide((int) $slide->id);
+        $this->assertArrayHasKey('content_editor', $result['errors']);
+        $this->assertSame('Test slide', $updated->name);
+        $this->assertSame('<p>Keep</p>', $updated->content);
     }
 
     /**
@@ -229,6 +285,20 @@ final class quick_edit_test extends \advanced_testcase {
         ]);
         $slide = $this->reload_slide($slideid);
         return [$slide, $context, $course];
+    }
+
+    /**
+     * Moodle editor payload for a quick-edit save.
+     *
+     * @param string $text Editor HTML.
+     * @return array{text: string, format: int, itemid: int}
+     */
+    private function editor_payload(string $text): array {
+        return [
+            'text' => $text,
+            'format' => FORMAT_HTML,
+            'itemid' => 0,
+        ];
     }
 
     /**

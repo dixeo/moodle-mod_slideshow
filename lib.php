@@ -851,14 +851,31 @@ function mod_slideshow_output_fragment_quickedit(array $args): string {
         slideshow_get_image_file_options()
     );
 
-    $form = new \mod_slideshow\form\quick_edit_form(null, ['cm' => $cm]);
-    $form->set_data((object) [
+    $form = new \mod_slideshow\form\quick_edit_form(null, [
+        'cm' => $cm,
+        'context' => $context,
+        'moodleeditor' => slideshow_quick_edit_uses_moodle_editor($context),
+    ]);
+    $data = (object) [
         'id' => (int) $slide->id,
         'cmid' => (int) $cm->id,
         'name' => $slide->name,
         'layout' => slideshow_normalize_layout($slide->layout ?? null),
         'image' => $draftid,
-    ]);
+    ];
+    if (slideshow_quick_edit_uses_moodle_editor($context)) {
+        $prepared = file_prepare_standard_editor(
+            $slide,
+            'content',
+            slideshow_get_editor_options($context),
+            $context,
+            'mod_slideshow',
+            'content',
+            (int) $slide->id
+        );
+        $data->content_editor = $prepared->content_editor;
+    }
+    $form->set_data($data);
 
     return html_writer::div($form->render(), 'slideshow-quick-edit');
 }

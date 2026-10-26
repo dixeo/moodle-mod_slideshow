@@ -94,6 +94,14 @@ body.path-mod-slideshow .slideshow-quick-edit #fgroup_id_layoutgroup_label {
     font-weight: bold;
 }
 
+body.path-mod-slideshow .slideshow-quick-edit [data-fieldtype="editor"] textarea {
+    height: 18rem;
+}
+
+body.path-mod-slideshow .slideshow-quick-edit [data-fieldtype="editor"] .tox-tinymce {
+    min-height: 24rem;
+}
+
 body.path-mod-slideshow .slideshow-container {
     position: relative;
     font-size: 1rem;

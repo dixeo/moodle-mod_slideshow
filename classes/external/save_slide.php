@@ -46,6 +46,10 @@ class save_slide extends external_api {
             'name' => new external_value(PARAM_RAW, 'Slide title'),
             'layout' => new external_value(PARAM_ALPHA, 'Slide layout'),
             'image' => new external_value(PARAM_INT, 'Image draft item id', VALUE_DEFAULT, 0),
+            'hascontent' => new external_value(PARAM_BOOL, 'Whether the Moodle editor was submitted', VALUE_DEFAULT, false),
+            'content' => new external_value(PARAM_RAW, 'Slide body', VALUE_DEFAULT, ''),
+            'contentformat' => new external_value(PARAM_INT, 'Slide body format', VALUE_DEFAULT, FORMAT_HTML),
+            'contentitemid' => new external_value(PARAM_INT, 'Slide body draft item id', VALUE_DEFAULT, 0),
         ]);
     }
 
@@ -57,9 +61,23 @@ class save_slide extends external_api {
      * @param string $name Slide title
      * @param string $layout Slide layout
      * @param int $image Image draft item id
+     * @param bool $hascontent Whether the Moodle editor was submitted
+     * @param string $content Slide body
+     * @param int $contentformat Slide body format
+     * @param int $contentitemid Slide body draft item id
      * @return array Rendered slide markup and field errors
      */
-    public static function execute(int $cmid, int $slideid, string $name, string $layout, int $image = 0): array {
+    public static function execute(
+        int $cmid,
+        int $slideid,
+        string $name,
+        string $layout,
+        int $image = 0,
+        bool $hascontent = false,
+        string $content = '',
+        int $contentformat = FORMAT_HTML,
+        int $contentitemid = 0
+    ): array {
         global $CFG;
         require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
 
@@ -69,14 +87,27 @@ class save_slide extends external_api {
             'name' => $name,
             'layout' => $layout,
             'image' => $image,
+            'hascontent' => $hascontent,
+            'content' => $content,
+            'contentformat' => $contentformat,
+            'contentitemid' => $contentitemid,
         ]);
         [$slide, $context] = self::require_view_slide($params['cmid'], $params['slideid']);
 
-        $result = slideshow_save_quick_edit($slide, $context, (object) [
+        $savedata = (object) [
             'name' => self::clean_name($params['name']),
             'layout' => $params['layout'],
             'image' => $params['image'],
-        ]);
+        ];
+        if (!empty($params['hascontent'])) {
+            $savedata->content_editor = [
+                'text' => (string) $params['content'],
+                'format' => (int) $params['contentformat'],
+                'itemid' => (int) $params['contentitemid'],
+            ];
+        }
+
+        $result = slideshow_save_quick_edit($slide, $context, $savedata);
 
         return self::format_result($result);
     }

@@ -153,6 +153,25 @@ function slideshow_use_dixeo_editor(context $context): bool {
 }
 
 /**
+ * Whether the player modal edits slide HTML with the Moodle editor.
+ *
+ * The Dixeo editor replaces that field when it is installed, enabled for this
+ * module, and the user is allowed to use it.
+ *
+ * @param context $context Module context.
+ * @return bool
+ */
+function slideshow_quick_edit_uses_moodle_editor(context $context): bool {
+    if (!slideshow_use_dixeo_editor($context)) {
+        return true;
+    }
+    if (!class_exists(\local_dixeo_editor\local\editor_capability::class)) {
+        return true;
+    }
+    return !\local_dixeo_editor\local\editor_capability::can_edit_module($context);
+}
+
+/**
  * Sanitize slide HTML for storage (defense in depth; same policy as display cleaning).
  *
  * @param string $content Raw slide HTML.
@@ -410,11 +429,12 @@ function slideshow_render_player_slide(stdClass $slide, \context $context, bool 
 /**
  * Save the title, layout, and image of an existing slide.
  *
- * The stored body is left unchanged. Title only does not replace the stored image.
+ * Title only does not replace the stored body or image. Any other layout stores
+ * the Moodle editor draft when content_editor is submitted.
  *
  * @param stdClass $slide Existing slideshow_slide row that belongs to this module.
  * @param \context $context Module context.
- * @param stdClass $data Submitted name, layout, and image draft item id.
+ * @param stdClass $data Submitted name, layout, image draft item id, and optional content_editor.
  * @return array{errors: array<string, string>, html?: string} Field errors, or rendered slide HTML when saved.
  */
 function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass $data): array {
@@ -434,6 +454,20 @@ function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass 
     if (!is_string($layout) || !isset(slideshow_get_layouts()[$layout])) {
         $errors['layoutgroup'] = get_string('layoutinvalid', 'slideshow');
     }
+    $editor = null;
+    if ($errors === [] && $layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        if (!isset($data->content_editor) || !is_array($data->content_editor)) {
+            $errors['content_editor'] = get_string('contentrequired', 'slideshow');
+        } else {
+            $editor = $data->content_editor;
+            $contenterrors = slideshow_validate_slide_submission([
+                'layout' => $layout,
+                'content_editor' => $editor,
+            ]);
+            unset($contenterrors['layoutgroup']);
+            $errors = array_merge($errors, $contenterrors);
+        }
+    }
     if ($errors !== []) {
         return ['errors' => $errors];
     }
@@ -445,6 +479,30 @@ function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass 
     $DB->update_record('slideshow_slide', $record);
 
     if ($record->layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $fromform = (object) [
+            'content_editor' => [
+                'text' => (string) ($editor['text'] ?? ''),
+                'format' => (int) ($editor['format'] ?? FORMAT_HTML),
+                'itemid' => (int) ($editor['itemid'] ?? 0),
+            ],
+        ];
+        $editoroptions = slideshow_get_editor_options($context);
+        $fromform = file_postupdate_standard_editor(
+            $fromform,
+            'content',
+            $editoroptions,
+            $context,
+            'mod_slideshow',
+            'content',
+            (int) $slide->id
+        );
+        $fromform->content = slideshow_sanitize_slide_content(
+            (string) $fromform->content,
+            (int) $fromform->contentformat
+        );
+        $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $slide->id]);
+        $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $slide->id]);
+
         file_save_draft_area_files(
             (int) ($data->image ?? 0),
             $context->id,

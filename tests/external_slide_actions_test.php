@@ -175,7 +175,17 @@ final class external_slide_actions_test extends \advanced_testcase {
         [$slideshow, , $slideid] = $this->create_slide_for_teacher();
         $cm = get_coursemodule_from_instance('slideshow', $slideshow->id);
 
-        $result = save_slide::execute((int) $cm->id, $slideid, 'Renamed', MOD_SLIDESHOW_LAYOUT_BACKGROUND, 0);
+        $result = save_slide::execute(
+            (int) $cm->id,
+            $slideid,
+            'Renamed',
+            MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+            0,
+            true,
+            '<p>Body</p>',
+            FORMAT_HTML,
+            0
+        );
         $result = external_api::clean_returnvalue(save_slide::execute_returns(), $result);
 
         $this->assertSame([], $result['errors']);

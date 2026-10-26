@@ -83,6 +83,9 @@ define([
         saving = true;
         clearErrors(modal);
         const layout = form.querySelector('input[name="layout"]:checked');
+        const content = form.querySelector('[name="content_editor[text]"]');
+        const contentformat = form.elements['content_editor[format]'];
+        const contentitem = form.elements['content_editor[itemid]'];
         const request = Ajax.call([{
             methodname: 'mod_slideshow_save_slide',
             args: {
@@ -91,6 +94,10 @@ define([
                 name: form.elements.name.value,
                 layout: layout ? layout.value : '',
                 image: Number(form.elements.image ? form.elements.image.value : 0),
+                hascontent: content !== null,
+                content: content ? content.value : '',
+                contentformat: Number(contentformat ? contentformat.value : 1),
+                contentitemid: Number(contentitem ? contentitem.value : 0),
             },
         }])[0];
         request.then((payload) => {

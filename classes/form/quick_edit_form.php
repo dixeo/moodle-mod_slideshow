@@ -82,6 +82,18 @@ class quick_edit_form extends \moodleform {
         );
         $mform->hideIf('image', 'layout', 'eq', MOD_SLIDESHOW_LAYOUT_TITLEONLY);
 
+        if (!empty($this->_customdata['moodleeditor'])) {
+            $context = $this->_customdata['context'];
+            $mform->addElement(
+                'editor',
+                'content_editor',
+                get_string('content', 'slideshow'),
+                ['rows' => 16],
+                slideshow_get_editor_options($context)
+            );
+            $mform->hideIf('content_editor', 'layout', 'eq', MOD_SLIDESHOW_LAYOUT_TITLEONLY);
+        }
+
         $mform->addElement('hidden', 'id');
         $mform->setType('id', PARAM_INT);
 
