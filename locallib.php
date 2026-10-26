@@ -228,7 +228,7 @@ function slideshow_user_can_view_slide_files(?stdClass $slide, \context $context
  *
  * Only whitelisted columns are copied; the owning slideshow id is always taken from the course module.
  *
- * @param stdClass $fromform Form data with name, layout, hidden, and id when updating.
+ * @param stdClass $fromform Form data with name, layout, hidetitle, hidden, and id when updating.
  * @param int $slideshowid Owning slideshow instance id ($cm->instance).
  * @param bool $isnewslide True when creating a new slide.
  * @param int $sortorder Sort order for new slides only.
@@ -243,6 +243,12 @@ function slideshow_prepare_slide_save_record(
     $record = new stdClass();
     $record->name = $fromform->name;
     $record->layout = slideshow_normalize_layout($fromform->layout ?? null);
+    // Title only always shows the title, so it does not keep a hide flag.
+    if ($record->layout === MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $record->hidetitle = 0;
+    } else {
+        $record->hidetitle = empty($fromform->hidetitle) ? 0 : 1;
+    }
     $record->hidden = (int) $fromform->hidden;
     $record->slideshow = $slideshowid;
     $record->timemodified = time();
@@ -321,6 +327,23 @@ function slideshow_layout_shows_image(string $layout): bool {
 }
 
 /**
+ * Whether the player shows this slide's title.
+ *
+ * The title is required on every slide. Title only always shows it. Every
+ * other layout hides it when the slide is marked to.
+ *
+ * @param stdClass $slide Slide row with layout and optional hidetitle.
+ * @return bool
+ */
+function slideshow_slide_shows_title(stdClass $slide): bool {
+    $layout = slideshow_normalize_layout($slide->layout ?? null);
+    if ($layout === MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        return true;
+    }
+    return empty($slide->hidetitle);
+}
+
+/**
  * Return a known layout, or background when the value is missing or unknown.
  *
  * An empty image on that background keeps the title and body on the light slide,
@@ -379,7 +402,8 @@ function slideshow_get_slide_image_url(\context $context, int $slideid, bool $th
 /**
  * Player markup for one slide.
  *
- * The title is plain text. Title only omits the body and the image. A background
+ * The title is plain text, and it is omitted when the slide hides it. Title only
+ * always includes the title and omits the body and the image. A background
  * image is a CSS background on an inner element so the player can set the slide
  * height without removing it. With no image the slide stays on the light background.
  *
@@ -406,8 +430,10 @@ function slideshow_render_slide_html(
         $classes .= ' hidden';
     }
 
-    $title = html_writer::tag('h2', format_string($slide->name ?? ''), ['class' => 'slide-title']);
-    $inner = $title;
+    $inner = '';
+    if (slideshow_slide_shows_title($slide)) {
+        $inner = html_writer::tag('h2', format_string($slide->name ?? ''), ['class' => 'slide-title']);
+    }
 
     if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
         $body = html_writer::div($contenthtml, 'slide-body');

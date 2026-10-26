@@ -172,6 +172,55 @@ final class slide_layout_render_test extends \advanced_testcase {
     }
 
     /**
+     * A hidden title is omitted, except on the title-only layout.
+     *
+     * @covers ::slideshow_render_slide_html
+     * @covers ::slideshow_slide_shows_title
+     */
+    public function test_hidden_title_is_omitted_except_on_title_only(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        $hidden = slideshow_render_slide_html(
+            (object) [
+                'id' => 13,
+                'name' => 'Stored title',
+                'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+                'hidetitle' => 1,
+            ],
+            '<p>Body</p>',
+            null,
+            false
+        );
+        $this->assertStringNotContainsString('slide-title', $hidden);
+        $this->assertStringNotContainsString('Stored title', $hidden);
+        $this->assertStringContainsString('<p>Body</p>', $hidden);
+        $this->assertFalse(slideshow_slide_shows_title((object) [
+            'layout' => MOD_SLIDESHOW_LAYOUT_CONTENTBOTTOM,
+            'hidetitle' => 1,
+        ]));
+
+        $titleonly = slideshow_render_slide_html(
+            (object) [
+                'id' => 14,
+                'name' => 'Always shown',
+                'layout' => MOD_SLIDESHOW_LAYOUT_TITLEONLY,
+                'hidetitle' => 1,
+            ],
+            '<p>Hidden body</p>',
+            null,
+            false
+        );
+        $this->assertStringContainsString('slide-title', $titleonly);
+        $this->assertStringContainsString('Always shown', $titleonly);
+        $this->assertTrue(slideshow_slide_shows_title((object) [
+            'layout' => MOD_SLIDESHOW_LAYOUT_TITLEONLY,
+            'hidetitle' => 1,
+        ]));
+    }
+
+    /**
      * A missing or unknown layout is a background slide with no image, and the title is escaped.
      *
      * @covers ::slideshow_render_slide_html

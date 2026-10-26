@@ -62,6 +62,11 @@ class mod_slideshow_slide_edit_form extends moodleform {
         $mform->addRule('name', null, 'required', null, 'client');
         $mform->addRule('name', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
 
+        $mform->addElement('advcheckbox', 'hidetitle', '', get_string('hidetitle', 'slideshow'));
+        $mform->setType('hidetitle', PARAM_BOOL);
+        $mform->setDefault('hidetitle', 0);
+        $mform->hideIf('hidetitle', 'layout', 'eq', MOD_SLIDESHOW_LAYOUT_TITLEONLY);
+
         $layouts = [];
         foreach (slideshow_get_layouts() as $value => $stringkey) {
             $thumb = html_writer::empty_tag('img', [

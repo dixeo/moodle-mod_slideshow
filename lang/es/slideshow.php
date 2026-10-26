@@ -42,6 +42,7 @@ $string['fullscreen'] = 'Pantalla completa';
 $string['fullscreenexitnotsupported'] = 'Su navegador no admite salir del modo de pantalla completa.';
 $string['fullscreennotsupported'] = 'Su navegador no admite el modo de pantalla completa.';
 $string['hide'] = 'Ocultar diapositiva';
+$string['hidetitle'] = 'Ocultar el título';
 $string['image'] = 'Imagen';
 $string['increase'] = 'Hacer el texto más grande';
 $string['layout'] = 'Diseño';

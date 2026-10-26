@@ -42,6 +42,7 @@ $string['fullscreen'] = 'Vollbild';
 $string['fullscreenexitnotsupported'] = 'Beenden des Vollbildmodus wird von Ihrem Browser nicht unterstützt.';
 $string['fullscreennotsupported'] = 'Der Vollbildmodus wird von Ihrem Browser nicht unterstützt.';
 $string['hide'] = 'Folie ausblenden';
+$string['hidetitle'] = 'Titel ausblenden';
 $string['image'] = 'Bild';
 $string['increase'] = 'Text vergrößern';
 $string['layout'] = 'Layout';

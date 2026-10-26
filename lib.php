@@ -860,6 +860,7 @@ function mod_slideshow_output_fragment_quickedit(array $args): string {
         'id' => (int) $slide->id,
         'cmid' => (int) $cm->id,
         'name' => $slide->name,
+        'hidetitle' => empty($slide->hidetitle) ? 0 : 1,
         'layout' => slideshow_normalize_layout($slide->layout ?? null),
         'image' => $draftid,
     ];

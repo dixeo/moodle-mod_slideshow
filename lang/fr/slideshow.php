@@ -42,6 +42,7 @@ $string['fullscreen'] = 'Plein écran';
 $string['fullscreenexitnotsupported'] = 'La sortie du plein écran n\'est pas prise en charge par votre navigateur.';
 $string['fullscreennotsupported'] = 'Le mode plein écran n\'est pas pris en charge par votre navigateur.';
 $string['hide'] = 'Masquer la diapositive';
+$string['hidetitle'] = 'Masquer le titre';
 $string['image'] = 'Image';
 $string['increase'] = 'Augmenter la taille du texte';
 $string['layout'] = 'Mise en page';

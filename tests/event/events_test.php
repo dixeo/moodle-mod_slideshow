@@ -34,11 +34,15 @@ final class events_test extends \advanced_testcase {
     }
 
     /**
-     * Build a slideshow activity, context, and slide for event tests.
+     * Build a slideshow activity, context, and stored slide for event tests.
+     *
+     * The slide is read back from the database so an event snapshot has every column.
      *
      * @return array{0: \stdClass, 1: \context_module, 2: \stdClass}
      */
     private function create_slideshow_fixture(): array {
+        global $DB;
+
         $course = $this->getDataGenerator()->create_course();
         $slideshow = $this->getDataGenerator()->create_module('slideshow', ['course' => $course->id]);
         $context = \context_module::instance($slideshow->cmid);
@@ -52,7 +56,8 @@ final class events_test extends \advanced_testcase {
             'sortorder' => 0,
             'timemodified' => time(),
         ];
-        $slide->id = $this->getDataGenerator()->get_plugin_generator('mod_slideshow')->create_slide($slide);
+        $slideid = $this->getDataGenerator()->get_plugin_generator('mod_slideshow')->create_slide($slide);
+        $slide = $DB->get_record('slideshow_slide', ['id' => $slideid], '*', MUST_EXIST);
 
         return [$slideshow, $context, $slide];
     }

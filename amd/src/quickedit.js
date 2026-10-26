@@ -282,6 +282,20 @@ define([
     }
 
     /**
+     * Read the hide-title checkbox, including Moodle's hidden companion input.
+     *
+     * @param {HTMLFormElement} form Modal form
+     * @returns {Number}
+     */
+    function hideTitleValue(form) {
+        const box = form.querySelector('input[type="checkbox"][name="hidetitle"]');
+        if (!box) {
+            return 0;
+        }
+        return box.checked ? 1 : 0;
+    }
+
+    /**
      * Post the modal form and keep it open when the server rejects the values.
      *
      * @param {Object} modal Save/cancel modal
@@ -322,6 +336,7 @@ define([
                 dixeoformat: dixeo ? dixeo.dixeoformat : 1,
                 dixeoitemid: dixeo ? dixeo.dixeoitemid : 0,
                 editorsessionid: dixeo ? dixeo.editorsessionid : 0,
+                hidetitle: hideTitleValue(form),
             },
         }])[0];
         request.then((payload) => {

@@ -66,6 +66,7 @@ class mod_slideshow_generator extends testing_module_generator {
 
         $record += [
             'name' => 'Test slide',
+            'hidetitle' => 0,
             'content' => '',
             'contentformat' => FORMAT_HTML,
             'layout' => 'background',

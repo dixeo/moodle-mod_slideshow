@@ -17,7 +17,8 @@
  * Unsaved slide preview on the slide edit form.
  *
  * Title and content are copied into the preview when those fields blur.
- * Layout and image update as soon as they change. Nothing here is submitted.
+ * Layout, the hide-title checkbox, and the image update as soon as they change.
+ * Nothing here is submitted.
  *
  * @module      mod_slideshow/preview
  * @copyright   2026 Dixeo
@@ -56,6 +57,21 @@ define([], function() {
             return '';
         }
         return input.value;
+    };
+
+    /**
+     * Whether the hide-title checkbox is checked.
+     *
+     * Title only still shows the title. The checkbox is hidden for that layout.
+     *
+     * @return {boolean}
+     */
+    const readHideTitle = () => {
+        const input = document.getElementById('id_hidetitle');
+        if (!input) {
+            return false;
+        }
+        return input.checked;
     };
 
     /**
@@ -144,7 +160,7 @@ define([], function() {
      * Build the preview DOM for the current form values.
      *
      * @param {HTMLElement} root
-     * @param {{title: string, content: string, layout: string, imageUrl: string}} state
+     * @param {{title: string, hideTitle: boolean, content: string, layout: string, imageUrl: string}} state
      */
     const render = (root, state) => {
         while (root.firstChild) {
@@ -160,13 +176,14 @@ define([], function() {
             slide.classList.add('has-image');
         }
 
-        const title = document.createElement('h2');
-        title.className = 'slide-title';
-        title.textContent = state.title;
-
         const layoutEl = document.createElement('div');
         layoutEl.className = 'slide-layout';
-        layoutEl.appendChild(title);
+        if (layout === LAYOUT_TITLEONLY || !state.hideTitle) {
+            const title = document.createElement('h2');
+            title.className = 'slide-title';
+            title.textContent = state.title;
+            layoutEl.appendChild(title);
+        }
 
         if (layout !== LAYOUT_TITLEONLY) {
             const body = document.createElement('div');
@@ -212,6 +229,7 @@ define([], function() {
 
             const state = {
                 title: readTitle(),
+                hideTitle: readHideTitle(),
                 content: readContent(),
                 layout: readLayout(),
                 imageUrl: readImageUrl(),
@@ -224,6 +242,14 @@ define([], function() {
             if (title) {
                 title.addEventListener('blur', () => {
                     state.title = readTitle();
+                    draw();
+                });
+            }
+
+            const hideTitle = document.getElementById('id_hidetitle');
+            if (hideTitle) {
+                hideTitle.addEventListener('change', () => {
+                    state.hideTitle = readHideTitle();
                     draw();
                 });
             }

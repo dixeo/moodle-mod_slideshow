@@ -155,6 +155,7 @@ final class quick_edit_test extends \advanced_testcase {
 
         $result = slideshow_save_quick_edit($slide, $context, (object) [
             'name' => 'Title only',
+            'hidetitle' => 1,
             'layout' => MOD_SLIDESHOW_LAYOUT_TITLEONLY,
             'image' => 0,
             'content_editor' => $this->editor_payload('<p>Replacement that must not be stored</p>'),
@@ -163,9 +164,42 @@ final class quick_edit_test extends \advanced_testcase {
         $updated = $this->reload_slide((int) $slide->id);
         $this->assertSame([], $result['errors']);
         $this->assertSame(MOD_SLIDESHOW_LAYOUT_TITLEONLY, $updated->layout);
+        $this->assertSame(0, (int) $updated->hidetitle);
+        $this->assertStringContainsString('Title only', $result['html']);
         $this->assertSame('<p>Stored body</p>', $updated->content);
         $this->assertSame(['keep.png'], $this->image_filenames($context->id, (int) $slide->id));
         $this->assertStringNotContainsString('slide-body', $result['html']);
+    }
+
+    /**
+     * Hide title drops the heading from the player and keeps the stored name.
+     *
+     * @covers ::slideshow_save_quick_edit
+     */
+    public function test_hide_title_omits_the_heading(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        [$slide, $context] = $this->create_slide('<p>Keep this body</p>');
+        $this->setAdminUser();
+
+        $result = slideshow_save_quick_edit($slide, $context, (object) [
+            'name' => 'Hidden heading',
+            'hidetitle' => 1,
+            'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+            'image' => 0,
+            'content_editor' => $this->editor_payload('<p>Keep this body</p>'),
+        ]);
+
+        $updated = $this->reload_slide((int) $slide->id);
+        $this->assertSame([], $result['errors']);
+        $this->assertSame('Hidden heading', $updated->name);
+        $this->assertSame(1, (int) $updated->hidetitle);
+        $this->assertStringNotContainsString('slide-title', $result['html']);
+        $this->assertStringNotContainsString('Hidden heading', $result['html']);
+        $this->assertStringContainsString('Keep this body', $result['html']);
+        $this->assertSame('Hidden heading', $result['name']);
     }
 
     /**

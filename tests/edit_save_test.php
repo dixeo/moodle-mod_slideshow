@@ -81,7 +81,36 @@ final class edit_save_test extends \advanced_testcase {
         $this->assertEquals('', $record->content);
         $this->assertEquals(FORMAT_HTML, $record->contentformat);
         $this->assertEquals(MOD_SLIDESHOW_LAYOUT_BACKGROUND, $record->layout);
+        $this->assertEquals(0, $record->hidetitle);
         $this->assertObjectNotHasProperty('id', $record);
+    }
+
+    /**
+     * The hide-title flag is stored, and title only clears it.
+     *
+     * @covers ::slideshow_prepare_slide_save_record
+     */
+    public function test_prepare_slide_save_record_stores_hide_title_except_title_only(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        $hidden = slideshow_prepare_slide_save_record((object) [
+            'name' => 'Slide',
+            'hidden' => 0,
+            'layout' => MOD_SLIDESHOW_LAYOUT_CONTENTTOP,
+            'hidetitle' => 1,
+        ], 3, true, 1);
+        $this->assertEquals(1, $hidden->hidetitle);
+
+        $titleonly = slideshow_prepare_slide_save_record((object) [
+            'id' => 4,
+            'name' => 'Slide',
+            'hidden' => 0,
+            'layout' => MOD_SLIDESHOW_LAYOUT_TITLEONLY,
+            'hidetitle' => 1,
+        ], 3, false);
+        $this->assertEquals(0, $titleonly->hidetitle);
     }
 
     /**

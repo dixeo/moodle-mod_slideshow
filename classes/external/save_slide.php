@@ -55,6 +55,7 @@ class save_slide extends external_api {
             'dixeoformat' => new external_value(PARAM_INT, 'Dixeo editor format', VALUE_DEFAULT, FORMAT_HTML),
             'dixeoitemid' => new external_value(PARAM_INT, 'Dixeo editor draft item id', VALUE_DEFAULT, 0),
             'editorsessionid' => new external_value(PARAM_INT, 'Dixeo editor session id', VALUE_DEFAULT, 0),
+            'hidetitle' => new external_value(PARAM_BOOL, 'Whether the slide title is hidden', VALUE_DEFAULT, false),
         ]);
     }
 
@@ -75,6 +76,7 @@ class save_slide extends external_api {
      * @param int $dixeoformat Dixeo editor format
      * @param int $dixeoitemid Dixeo editor draft item id
      * @param int $editorsessionid Dixeo editor session id
+     * @param bool $hidetitle Whether the slide title is hidden
      * @return array Rendered slide markup and field errors
      */
     public static function execute(
@@ -91,7 +93,8 @@ class save_slide extends external_api {
         string $dixeotext = '',
         int $dixeoformat = FORMAT_HTML,
         int $dixeoitemid = 0,
-        int $editorsessionid = 0
+        int $editorsessionid = 0,
+        bool $hidetitle = false
     ): array {
         global $CFG;
         require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
@@ -111,6 +114,7 @@ class save_slide extends external_api {
             'dixeoformat' => $dixeoformat,
             'dixeoitemid' => $dixeoitemid,
             'editorsessionid' => $editorsessionid,
+            'hidetitle' => $hidetitle,
         ]);
         [$slide, $context] = self::require_view_slide($params['cmid'], $params['slideid']);
         if (!empty($params['usedixeo']) && slideshow_quick_edit_uses_moodle_editor($context)) {
@@ -119,6 +123,7 @@ class save_slide extends external_api {
 
         $savedata = (object) [
             'name' => self::clean_name($params['name']),
+            'hidetitle' => empty($params['hidetitle']) ? 0 : 1,
             'layout' => $params['layout'],
             'image' => $params['image'],
         ];

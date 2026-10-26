@@ -42,6 +42,7 @@ $string['fullscreen'] = 'Schermo intero';
 $string['fullscreenexitnotsupported'] = 'L\'uscita dalla modalità schermo intero non è supportata dal browser.';
 $string['fullscreennotsupported'] = 'La modalità schermo intero non è supportata dal browser.';
 $string['hide'] = 'Nascondi diapositiva';
+$string['hidetitle'] = 'Nascondi il titolo';
 $string['image'] = 'Immagine';
 $string['increase'] = 'Aumenta dimensione testo';
 $string['layout'] = 'Layout';

@@ -42,6 +42,7 @@ $string['fullscreen'] = 'Fullscreen';
 $string['fullscreenexitnotsupported'] = 'Fullscreen exit is not supported by your browser.';
 $string['fullscreennotsupported'] = 'Fullscreen mode is not supported by your browser.';
 $string['hide'] = 'Hide slide';
+$string['hidetitle'] = 'Hide title';
 $string['image'] = 'Image';
 $string['increase'] = 'Make text larger';
 $string['layout'] = 'Layout';

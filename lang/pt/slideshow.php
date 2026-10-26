@@ -42,6 +42,7 @@ $string['fullscreen'] = 'Ecrã inteiro';
 $string['fullscreenexitnotsupported'] = 'O seu navegador não suporta sair do modo de ecrã inteiro.';
 $string['fullscreennotsupported'] = 'O seu navegador não suporta o modo de ecrã inteiro.';
 $string['hide'] = 'Ocultar diapositivo';
+$string['hidetitle'] = 'Ocultar o título';
 $string['image'] = 'Imagem';
 $string['increase'] = 'Aumentar texto';
 $string['layout'] = 'Disposição';

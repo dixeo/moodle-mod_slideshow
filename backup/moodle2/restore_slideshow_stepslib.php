@@ -69,6 +69,9 @@ class restore_slideshow_activity_structure_step extends restore_activity_structu
 
         $data->slideshow = $this->get_new_parentid('slideshow');
         $data->timemodified = $this->apply_date_offset($data->timemodified);
+        if (!property_exists($data, 'hidetitle')) {
+            $data->hidetitle = 0;
+        }
 
         $newitemid = $DB->insert_record('slideshow_slide', $data);
         $this->set_mapping('slideshow_slide', $oldid, $newitemid, true);
