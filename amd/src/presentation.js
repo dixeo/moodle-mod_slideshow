@@ -38,7 +38,7 @@ define([
         scantoenrol: '.scantoenrol',
         qrcode: '.qrcode',
         fullscreen: '.fullscreen',
-        editslide: '.editslide',
+        editslide: '.slideshow-edit-cog',
     };
 
     return {

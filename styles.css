@@ -22,6 +22,51 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+body.path-mod-slideshow .slideshow-container > .slideshow-edit-bar {
+    position: relative;
+    z-index: 5;
+    width: 100%;
+    font-size: 0;
+    background: #edf5fe;
+    border-radius: 3px 3px 0 0;
+    padding: 6px 0;
+}
+
+body.path-mod-slideshow .slideshow-container > .slideshow-edit-bar::before {
+    content: "";
+    display: inline-block;
+    width: 66%;
+}
+
+body.path-mod-slideshow .slideshow-container > .slideshow-edit-bar .controls {
+    width: 33%;
+    display: inline-block;
+    text-align: right;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+body.path-mod-slideshow .slideshow-container > .slideshow-edit-bar .slideshow-edit-cog {
+    border: none;
+    background: none;
+    padding: 0;
+    line-height: 1;
+    color: #138df0;
+    cursor: pointer;
+}
+
+body.path-mod-slideshow .slideshow-container > .slideshow-edit-bar .slideshow-edit-cog .icon {
+    color: #138df0;
+}
+
+body.path-mod-slideshow .slideshow-container.has-edit-bar > .slide {
+    border-top: none;
+}
+
+body.path-mod-slideshow .slideshow-container.fullscreen > .slideshow-edit-bar {
+    display: none;
+}
+
 body.path-mod-slideshow .slideshow-container {
     position: relative;
     font-size: 1rem;
