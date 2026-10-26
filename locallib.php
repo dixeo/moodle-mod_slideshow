@@ -270,6 +270,12 @@ define('MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT', 'contentright');
 /** @var string Title on top, text on the left, image on the right. */
 define('MOD_SLIDESHOW_LAYOUT_CONTENTLEFT', 'contentleft');
 
+/** @var string Title on top, text above the image. */
+define('MOD_SLIDESHOW_LAYOUT_CONTENTTOP', 'contenttop');
+
+/** @var string Title on top, text below the image. */
+define('MOD_SLIDESHOW_LAYOUT_CONTENTBOTTOM', 'contentbottom');
+
 /** @var int Default max length for slide titles on the slides management list. */
 define('MOD_SLIDESHOW_SLIDE_LIST_LABEL_MAX', 80);
 
@@ -284,7 +290,34 @@ function slideshow_get_layouts(): array {
         MOD_SLIDESHOW_LAYOUT_BACKGROUND => 'layout_background',
         MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT => 'layout_contentright',
         MOD_SLIDESHOW_LAYOUT_CONTENTLEFT => 'layout_contentleft',
+        MOD_SLIDESHOW_LAYOUT_CONTENTTOP => 'layout_contenttop',
+        MOD_SLIDESHOW_LAYOUT_CONTENTBOTTOM => 'layout_contentbottom',
     ];
+}
+
+/**
+ * Whether the layout places the image beside or above the text.
+ *
+ * @param string $layout Normalized layout.
+ * @return bool
+ */
+function slideshow_layout_is_split(string $layout): bool {
+    return $layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTTOP
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTBOTTOM;
+}
+
+/**
+ * Whether the layout paints the slide image.
+ *
+ * Title only never does. The other layouts do when a file is stored.
+ *
+ * @param string $layout Normalized layout.
+ * @return bool
+ */
+function slideshow_layout_shows_image(string $layout): bool {
+    return $layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND || slideshow_layout_is_split($layout);
 }
 
 /**
@@ -363,10 +396,7 @@ function slideshow_render_slide_html(
     bool $hidden = false
 ): string {
     $layout = slideshow_normalize_layout($slide->layout ?? null);
-    $usesimage = $layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND
-        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT
-        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT;
-    $hasimage = $usesimage && $imageurl !== null && $imageurl !== '';
+    $hasimage = slideshow_layout_shows_image($layout) && $imageurl !== null && $imageurl !== '';
 
     $classes = 'slide no-overflow layout-' . $layout;
     if ($layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND && $hasimage) {
@@ -381,7 +411,7 @@ function slideshow_render_slide_html(
 
     if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
         $body = html_writer::div($contenthtml, 'slide-body');
-        if ($layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT) {
+        if (slideshow_layout_is_split($layout)) {
             $mediaattrs = ['aria-hidden' => 'true'];
             if ($hasimage) {
                 $mediaattrs['style'] = 'background-image:url("' . $imageurl . '")';
@@ -436,11 +466,7 @@ function slideshow_render_player_slide(stdClass $slide, \context $context, bool 
         $content = format_text($content, (int) ($slide->contentformat ?? FORMAT_HTML), $formatoptions);
         $content = slideshow_balance_slide_html($content, (int) $slide->id);
     }
-    if (
-        $layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND
-        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT
-        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT
-    ) {
+    if (slideshow_layout_shows_image($layout)) {
         $imageurl = slideshow_get_slide_image_url($context, (int) $slide->id);
     }
     return slideshow_render_slide_html($slide, $content, $imageurl, $hidden);
@@ -619,11 +645,7 @@ function slideshow_get_slide_list_preview_html(stdClass $slide, \context $contex
         $content = format_text($content, (int) ($slide->contentformat ?? FORMAT_HTML), $formatoptions);
         $content = slideshow_balance_slide_html($content, (int) $slide->id);
     }
-    if (
-        $layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND
-        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT
-        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT
-    ) {
+    if (slideshow_layout_shows_image($layout)) {
         $imageurl = slideshow_get_slide_image_url($context, (int) $slide->id, true);
     }
 

@@ -262,7 +262,9 @@ body.path-mod-slideshow .slideshow-container .layout-background.has-image .slide
 }
 
 body.path-mod-slideshow .slideshow-container .layout-contentleft,
-body.path-mod-slideshow .slideshow-container .layout-contentright {
+body.path-mod-slideshow .slideshow-container .layout-contentright,
+body.path-mod-slideshow .slideshow-container .layout-contenttop,
+body.path-mod-slideshow .slideshow-container .layout-contentbottom {
     background: #fff;
 }
 
@@ -276,6 +278,15 @@ body.path-mod-slideshow .slideshow-container .slide-split {
 
 body.path-mod-slideshow .slideshow-container .layout-contentleft .slide-split {
     flex-direction: row-reverse;
+}
+
+body.path-mod-slideshow .slideshow-container .layout-contenttop .slide-split,
+body.path-mod-slideshow .slideshow-container .layout-contentbottom .slide-split {
+    flex-direction: column;
+}
+
+body.path-mod-slideshow .slideshow-container .layout-contenttop .slide-split {
+    flex-direction: column-reverse;
 }
 
 body.path-mod-slideshow .slideshow-container .slide-media,

@@ -138,6 +138,40 @@ final class slide_layout_render_test extends \advanced_testcase {
     }
 
     /**
+     * Content top and content bottom use the same image box, stacked by CSS.
+     *
+     * @covers ::slideshow_render_slide_html
+     * @covers ::slideshow_layout_is_split
+     */
+    public function test_stacked_layouts_place_the_image_box(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        $top = slideshow_render_slide_html(
+            (object) ['id' => 11, 'name' => 'Top', 'layout' => MOD_SLIDESHOW_LAYOUT_CONTENTTOP],
+            '<p>Above</p>',
+            'https://example.com/below.png',
+            false
+        );
+        $this->assertStringContainsString('layout-contenttop', $top);
+        $this->assertLessThan(strpos($top, 'slide-body'), strpos($top, 'slide-media'));
+        $this->assertStringContainsString('below.png', $top);
+        $this->assertStringContainsString('<p>Above</p>', $top);
+
+        $bottom = slideshow_render_slide_html(
+            (object) ['id' => 12, 'name' => 'Bottom', 'layout' => MOD_SLIDESHOW_LAYOUT_CONTENTBOTTOM],
+            '<p>Under</p>',
+            null,
+            false
+        );
+        $this->assertStringContainsString('layout-contentbottom', $bottom);
+        $this->assertStringContainsString('slide-media', $bottom);
+        $this->assertStringNotContainsString('background-image', $bottom);
+        $this->assertStringContainsString('<p>Under</p>', $bottom);
+    }
+
+    /**
      * A missing or unknown layout is a background slide with no image, and the title is escaped.
      *
      * @covers ::slideshow_render_slide_html

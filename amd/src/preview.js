@@ -104,13 +104,24 @@ define([], function() {
     };
 
     /**
-     * Whether this layout shows the image beside or behind the text.
+     * Whether the layout stacks or sits the image next to the text.
+     *
+     * @param {string} layout
+     * @return {boolean}
+     */
+    const isSplitLayout = (layout) => {
+        return layout === 'contentleft' || layout === 'contentright'
+            || layout === 'contenttop' || layout === 'contentbottom';
+    };
+
+    /**
+     * Whether this layout shows the image beside, above, or behind the text.
      *
      * @param {string} layout
      * @return {boolean}
      */
     const layoutUsesImage = (layout) => {
-        return layout === LAYOUT_BACKGROUND || layout === 'contentleft' || layout === 'contentright';
+        return layout === LAYOUT_BACKGROUND || isSplitLayout(layout);
     };
 
     /**
@@ -145,7 +156,7 @@ define([], function() {
             const body = document.createElement('div');
             body.className = 'slide-body';
             body.innerHTML = state.content;
-            if (layout === 'contentleft' || layout === 'contentright') {
+            if (isSplitLayout(layout)) {
                 const media = document.createElement('div');
                 media.className = 'slide-media';
                 media.setAttribute('aria-hidden', 'true');
