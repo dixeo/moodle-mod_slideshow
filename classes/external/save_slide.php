@@ -150,6 +150,8 @@ class save_slide extends external_api {
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
             'html' => new external_value(PARAM_RAW, 'Rendered slide markup'),
+            'name' => new external_value(PARAM_RAW, 'Slide name shown in the list'),
+            'preview' => new external_value(PARAM_RAW, 'Slide list preview markup'),
             'errors' => new external_multiple_structure(
                 new external_single_structure([
                     'field' => new external_value(PARAM_ALPHANUMEXT, 'Field name'),
@@ -217,6 +219,8 @@ class save_slide extends external_api {
 
         return [
             'html' => (string) ($result['html'] ?? ''),
+            'name' => (string) ($result['name'] ?? ''),
+            'preview' => (string) ($result['preview'] ?? ''),
             'errors' => $errors,
         ];
     }

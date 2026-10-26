@@ -582,6 +582,8 @@ function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass 
     return [
         'errors' => [],
         'html' => slideshow_render_player_slide($updated, $context, false),
+        'name' => slideshow_get_slide_list_name($updated),
+        'preview' => slideshow_get_slide_list_preview_html($updated, $context),
     ];
 }
 

@@ -59,7 +59,7 @@ $PAGE->activityheader->set_attrs([
     'description' => '',
 ]);
 
-$PAGE->requires->js_call_amd('mod_slideshow/slides', 'init', [$cm->id]);
+$PAGE->requires->js_call_amd('mod_slideshow/slides', 'init', [$cm->id, $context->id]);
 
 echo $OUTPUT->header();
 

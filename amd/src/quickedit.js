@@ -338,7 +338,7 @@ define([
                 return;
             }
             state.saved = true;
-            options.onSaved(payload.html);
+            options.onSaved(payload.html, payload);
             closeModal(modal);
             return;
         }).catch((error) => {
@@ -356,7 +356,7 @@ define([
          * @param {Number} options.cmid Course module id
          * @param {Number} options.contextid Module context id
          * @param {Number} options.slideid Slide row id
-         * @param {Function} options.onSaved Called with the replacement slide HTML
+         * @param {Function} options.onSaved Called with the replacement slide HTML and the save payload
          */
         open: function(options) {
             const state = {saved: false};
