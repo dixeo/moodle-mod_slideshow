@@ -86,7 +86,7 @@ class mod_slideshow_slide_edit_form extends moodleform {
         $mform->setDefault('layout', MOD_SLIDESHOW_LAYOUT_BACKGROUND);
 
         $mform->addElement(
-            'filepicker',
+            'filemanager',
             'image',
             get_string('image', 'slideshow'),
             null,

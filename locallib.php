@@ -78,7 +78,7 @@ function slideshow_get_editor_options($context) {
 }
 
 /**
- * File picker options for the single slide image.
+ * File manager options for the single slide image.
  *
  * @return array
  */

@@ -82,9 +82,25 @@ define([], function() {
     /**
      * Draft or plugin file URL for the slide image, when one is chosen.
      *
+     * The file manager shows that file as a thumbnail. A file picker link is
+     * used when the thumbnail has not been painted yet.
+     *
      * @return {string}
      */
     const readImageUrl = () => {
+        const images = document.querySelectorAll('#fitem_id_image img');
+        let found = '';
+        images.forEach((img) => {
+            if (found !== '' || !img.src) {
+                return;
+            }
+            if (img.src.indexOf('draftfile.php') !== -1 || img.src.indexOf('pluginfile.php') !== -1) {
+                found = img.src;
+            }
+        });
+        if (found !== '') {
+            return found;
+        }
         const link = document.querySelector('#fitem_id_image .filepicker-filename a[href]');
         if (!link) {
             return '';
@@ -216,6 +232,7 @@ define([], function() {
             if (layoutGroup) {
                 layoutGroup.addEventListener('change', () => {
                     state.layout = readLayout();
+                    state.imageUrl = readImageUrl();
                     draw();
                 });
             }
@@ -234,7 +251,12 @@ define([], function() {
                     state.imageUrl = next;
                     draw();
                 });
-                observer.observe(imageField, {childList: true, subtree: true});
+                observer.observe(imageField, {
+                    attributes: true,
+                    attributeFilter: ['src'],
+                    childList: true,
+                    subtree: true,
+                });
             }
 
             let tinyBound = false;
