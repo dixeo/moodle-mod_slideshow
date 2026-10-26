@@ -246,6 +246,104 @@ final class quick_edit_test extends \advanced_testcase {
     }
 
     /**
+     * Empty HTML from the embedded Dixeo editor is rejected before anything is written.
+     *
+     * @covers ::slideshow_save_quick_edit
+     */
+    public function test_empty_dixeo_content_is_rejected(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        [$slide, $context] = $this->create_slide('<p>Keep</p>');
+        $this->setAdminUser();
+
+        $result = slideshow_save_quick_edit($slide, $context, (object) [
+            'name' => 'Changed',
+            'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+            'image' => 0,
+            'dixeo' => true,
+            'dixeo_text' => '<p></p>',
+            'dixeo_format' => FORMAT_HTML,
+            'dixeo_itemid' => 0,
+            'editorsessionid' => 0,
+        ]);
+
+        $updated = $this->reload_slide((int) $slide->id);
+        $this->assertArrayHasKey('content_editor', $result['errors']);
+        $this->assertSame('Test slide', $updated->name);
+        $this->assertSame('<p>Keep</p>', $updated->content);
+    }
+
+    /**
+     * When the Dixeo editor is available, the modal save stores its HTML and the new title.
+     *
+     * @covers ::slideshow_save_quick_edit
+     * @covers ::slideshow_save_dixeo_slide_content
+     * @covers ::slideshow_quick_edit_uses_moodle_editor
+     */
+    public function test_dixeo_editor_content_is_stored(): void {
+        global $CFG;
+
+        if (!\core_plugin_manager::instance()->get_plugin_info('local_dixeo_editor')) {
+            $this->markTestSkipped('local_dixeo_editor is required for this test.');
+        }
+        if (!class_exists(\local_dixeo\external\service_factory::class)) {
+            $this->markTestSkipped('local_dixeo is required for this test.');
+        }
+
+        $this->setAdminUser();
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        [$slide, $context] = $this->create_slide('<p>Old</p>');
+        $this->assertFalse(slideshow_quick_edit_uses_moodle_editor($context));
+
+        $result = slideshow_save_quick_edit($slide, $context, (object) [
+            'name' => 'Saved from Dixeo',
+            'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+            'image' => 0,
+            'dixeo' => true,
+            'dixeo_text' => '<p>From Dixeo</p>',
+            'dixeo_format' => FORMAT_HTML,
+            'dixeo_itemid' => 0,
+            'editorsessionid' => 0,
+        ]);
+
+        $updated = $this->reload_slide((int) $slide->id);
+        $this->assertSame([], $result['errors']);
+        $this->assertSame('Saved from Dixeo', $updated->name);
+        $this->assertStringContainsString('From Dixeo', $updated->content);
+    }
+
+    /**
+     * The embedded editor shows the prompt bar and not the full-page OK button.
+     *
+     * @covers \local_dixeo_editor\output\embedded_editor::render
+     */
+    public function test_embedded_editor_omits_page_header(): void {
+        global $CFG, $PAGE;
+
+        if (!\core_plugin_manager::instance()->get_plugin_info('local_dixeo_editor')) {
+            $this->markTestSkipped('local_dixeo_editor is required for this test.');
+        }
+        if (!class_exists(\local_dixeo\external\service_factory::class)) {
+            $this->markTestSkipped('local_dixeo is required for this test.');
+        }
+
+        $this->setAdminUser();
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        [$slide, $context] = $this->create_slide('<p>Body</p>');
+        $cm = get_coursemodule_from_instance('slideshow', $slide->slideshow, 0, false, MUST_EXIST);
+        $PAGE->set_url(new \moodle_url('/mod/slideshow/view.php', ['id' => $cm->id]));
+        $rendered = \local_dixeo_editor\output\embedded_editor::render($cm, (int) $slide->id, $context);
+
+        $this->assertStringContainsString('id="instructions"', $rendered['html']);
+        $this->assertStringNotContainsString('id="apply_button"', $rendered['html']);
+        $this->assertGreaterThan(0, $rendered['sessionid']);
+    }
+
+    /**
      * A user without mod/slideshow:viewslides cannot save.
      *
      * @covers ::slideshow_save_quick_edit

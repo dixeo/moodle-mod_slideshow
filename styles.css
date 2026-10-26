@@ -102,6 +102,12 @@ body.path-mod-slideshow .slideshow-quick-edit [data-fieldtype="editor"] .tox-tin
     min-height: 24rem;
 }
 
+body.path-mod-slideshow .slideshow-content-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
 body.path-mod-slideshow .slideshow-container {
     position: relative;
     font-size: 1rem;

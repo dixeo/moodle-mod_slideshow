@@ -877,5 +877,19 @@ function mod_slideshow_output_fragment_quickedit(array $args): string {
     }
     $form->set_data($data);
 
-    return html_writer::div($form->render(), 'slideshow-quick-edit');
+    $html = html_writer::div($form->render(), 'slideshow-quick-edit');
+    if (!slideshow_quick_edit_uses_moodle_editor($context)) {
+        $embedded = \local_dixeo_editor\output\embedded_editor::render($cm, (int) $slide->id, $context);
+        $contentlabel = html_writer::tag('label', get_string('content', 'slideshow'), [
+            'class' => 'slideshow-content-label',
+            'for' => 'id_modulecontent',
+        ]);
+        $html .= html_writer::div($contentlabel . $embedded['html'], 'slideshow-dixeo-editor', [
+            'data-cmid' => (int) $cm->id,
+            'data-slideid' => (int) $slide->id,
+            'data-sessionid' => (int) $embedded['sessionid'],
+        ]);
+    }
+
+    return $html;
 }

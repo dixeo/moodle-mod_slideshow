@@ -50,6 +50,11 @@ class save_slide extends external_api {
             'content' => new external_value(PARAM_RAW, 'Slide body', VALUE_DEFAULT, ''),
             'contentformat' => new external_value(PARAM_INT, 'Slide body format', VALUE_DEFAULT, FORMAT_HTML),
             'contentitemid' => new external_value(PARAM_INT, 'Slide body draft item id', VALUE_DEFAULT, 0),
+            'usedixeo' => new external_value(PARAM_BOOL, 'Whether the Dixeo editor was submitted', VALUE_DEFAULT, false),
+            'dixeotext' => new external_value(PARAM_RAW, 'Dixeo editor body', VALUE_DEFAULT, ''),
+            'dixeoformat' => new external_value(PARAM_INT, 'Dixeo editor format', VALUE_DEFAULT, FORMAT_HTML),
+            'dixeoitemid' => new external_value(PARAM_INT, 'Dixeo editor draft item id', VALUE_DEFAULT, 0),
+            'editorsessionid' => new external_value(PARAM_INT, 'Dixeo editor session id', VALUE_DEFAULT, 0),
         ]);
     }
 
@@ -65,6 +70,11 @@ class save_slide extends external_api {
      * @param string $content Slide body
      * @param int $contentformat Slide body format
      * @param int $contentitemid Slide body draft item id
+     * @param bool $usedixeo Whether the Dixeo editor was submitted
+     * @param string $dixeotext Dixeo editor body
+     * @param int $dixeoformat Dixeo editor format
+     * @param int $dixeoitemid Dixeo editor draft item id
+     * @param int $editorsessionid Dixeo editor session id
      * @return array Rendered slide markup and field errors
      */
     public static function execute(
@@ -76,7 +86,12 @@ class save_slide extends external_api {
         bool $hascontent = false,
         string $content = '',
         int $contentformat = FORMAT_HTML,
-        int $contentitemid = 0
+        int $contentitemid = 0,
+        bool $usedixeo = false,
+        string $dixeotext = '',
+        int $dixeoformat = FORMAT_HTML,
+        int $dixeoitemid = 0,
+        int $editorsessionid = 0
     ): array {
         global $CFG;
         require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
@@ -91,8 +106,16 @@ class save_slide extends external_api {
             'content' => $content,
             'contentformat' => $contentformat,
             'contentitemid' => $contentitemid,
+            'usedixeo' => $usedixeo,
+            'dixeotext' => $dixeotext,
+            'dixeoformat' => $dixeoformat,
+            'dixeoitemid' => $dixeoitemid,
+            'editorsessionid' => $editorsessionid,
         ]);
         [$slide, $context] = self::require_view_slide($params['cmid'], $params['slideid']);
+        if (!empty($params['usedixeo']) && slideshow_quick_edit_uses_moodle_editor($context)) {
+            throw new \moodle_exception('nopermissions', 'error', '', 'local/dixeo:edit');
+        }
 
         $savedata = (object) [
             'name' => self::clean_name($params['name']),
@@ -105,6 +128,13 @@ class save_slide extends external_api {
                 'format' => (int) $params['contentformat'],
                 'itemid' => (int) $params['contentitemid'],
             ];
+        }
+        if (!empty($params['usedixeo'])) {
+            $savedata->dixeo = true;
+            $savedata->dixeo_text = (string) $params['dixeotext'];
+            $savedata->dixeo_format = (int) $params['dixeoformat'];
+            $savedata->dixeo_itemid = (int) $params['dixeoitemid'];
+            $savedata->editorsessionid = (int) $params['editorsessionid'];
         }
 
         $result = slideshow_save_quick_edit($slide, $context, $savedata);

@@ -455,11 +455,20 @@ function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass 
         $errors['layoutgroup'] = get_string('layoutinvalid', 'slideshow');
     }
     $editor = null;
+    $usedixeo = !empty($data->dixeo);
     if ($errors === [] && $layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
-        if (!isset($data->content_editor) || !is_array($data->content_editor)) {
+        if ($usedixeo) {
+            $editor = [
+                'text' => (string) ($data->dixeo_text ?? ''),
+                'format' => (int) ($data->dixeo_format ?? FORMAT_HTML),
+                'itemid' => (int) ($data->dixeo_itemid ?? 0),
+            ];
+        } else if (!isset($data->content_editor) || !is_array($data->content_editor)) {
             $errors['content_editor'] = get_string('contentrequired', 'slideshow');
         } else {
             $editor = $data->content_editor;
+        }
+        if ($editor !== null) {
             $contenterrors = slideshow_validate_slide_submission([
                 'layout' => $layout,
                 'content_editor' => $editor,
@@ -472,6 +481,10 @@ function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass 
         return ['errors' => $errors];
     }
 
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY && $usedixeo) {
+        slideshow_save_dixeo_slide_content($slide, $context, $data);
+    }
+
     $data->name = $name;
     $data->id = (int) $slide->id;
     $data->hidden = (int) $slide->hidden;
@@ -479,29 +492,31 @@ function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass 
     $DB->update_record('slideshow_slide', $record);
 
     if ($record->layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
-        $fromform = (object) [
-            'content_editor' => [
-                'text' => (string) ($editor['text'] ?? ''),
-                'format' => (int) ($editor['format'] ?? FORMAT_HTML),
-                'itemid' => (int) ($editor['itemid'] ?? 0),
-            ],
-        ];
-        $editoroptions = slideshow_get_editor_options($context);
-        $fromform = file_postupdate_standard_editor(
-            $fromform,
-            'content',
-            $editoroptions,
-            $context,
-            'mod_slideshow',
-            'content',
-            (int) $slide->id
-        );
-        $fromform->content = slideshow_sanitize_slide_content(
-            (string) $fromform->content,
-            (int) $fromform->contentformat
-        );
-        $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $slide->id]);
-        $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $slide->id]);
+        if (!$usedixeo) {
+            $fromform = (object) [
+                'content_editor' => [
+                    'text' => (string) ($editor['text'] ?? ''),
+                    'format' => (int) ($editor['format'] ?? FORMAT_HTML),
+                    'itemid' => (int) ($editor['itemid'] ?? 0),
+                ],
+            ];
+            $editoroptions = slideshow_get_editor_options($context);
+            $fromform = file_postupdate_standard_editor(
+                $fromform,
+                'content',
+                $editoroptions,
+                $context,
+                'mod_slideshow',
+                'content',
+                (int) $slide->id
+            );
+            $fromform->content = slideshow_sanitize_slide_content(
+                (string) $fromform->content,
+                (int) $fromform->contentformat
+            );
+            $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $slide->id]);
+            $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $slide->id]);
+        }
 
         file_save_draft_area_files(
             (int) ($data->image ?? 0),
@@ -522,6 +537,38 @@ function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass 
         'errors' => [],
         'html' => slideshow_render_player_slide($updated, $context, false),
     ];
+}
+
+/**
+ * Store slide HTML from the embedded Dixeo editor, including its draft files.
+ *
+ * Called before the title and layout update. The adapter rewrites the slide row
+ * from the record it loaded, so name and layout are written after this returns.
+ *
+ * @param stdClass $slide Existing slideshow_slide row.
+ * @param \context $context Module context.
+ * @param stdClass $data Dixeo editor text, format, draft item id, and session id.
+ */
+function slideshow_save_dixeo_slide_content(stdClass $slide, \context $context, stdClass $data): void {
+    global $CFG, $DB;
+
+    if (!class_exists(\local_dixeo_editor\activity\activity_adapter_factory::class)) {
+        throw new \moodle_exception('invalidaccessparameter');
+    }
+
+    require_once($CFG->dirroot . '/mod/page/locallib.php');
+
+    $cm = get_coursemodule_from_instance('slideshow', $slide->slideshow, 0, false, MUST_EXIST);
+    $factory = new \local_dixeo_editor\activity\activity_adapter_factory($DB);
+    $adapter = $factory->create((int) $cm->id, (int) $slide->id);
+    $sessionid = (int) ($data->editorsessionid ?? 0);
+    $adapter->save_content(
+        (string) ($data->dixeo_text ?? ''),
+        (int) ($data->dixeo_format ?? FORMAT_HTML),
+        (int) ($data->dixeo_itemid ?? 0),
+        page_get_editor_options($context),
+        $sessionid > 0 ? $sessionid : null
+    );
 }
 
 /**
