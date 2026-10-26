@@ -148,6 +148,114 @@ define([
     }
 
     /**
+     * Run a callback for each TinyMCE instance inside the modal.
+     *
+     * @param {Object} modal Save/cancel modal
+     * @param {Function} callback Receives the editor instance
+     */
+    function eachModalEditor(modal, callback) {
+        if (!window.tinymce || typeof window.tinymce.get !== 'function') {
+            return;
+        }
+        const body = modal.getBody()[0];
+        if (!body) {
+            return;
+        }
+        body.querySelectorAll('textarea').forEach((textarea) => {
+            if (!textarea.id) {
+                return;
+            }
+            const editor = window.tinymce.get(textarea.id);
+            if (editor && !editor.removed) {
+                callback(editor);
+            }
+        });
+    }
+
+    /**
+     * Copy TinyMCE content into the textareas before the form is posted.
+     *
+     * @param {Object} modal Save/cancel modal
+     */
+    function saveModalEditors(modal) {
+        eachModalEditor(modal, (editor) => {
+            if (typeof editor.save === 'function') {
+                editor.save();
+            }
+        });
+    }
+
+    /**
+     * Remove one TinyMCE instance.
+     *
+     * @param {Object} editor TinyMCE editor
+     */
+    function removeEditor(editor) {
+        if (!editor || editor.removed) {
+            return;
+        }
+        try {
+            editor.remove();
+        } catch (e) {
+            // A detached editor can throw. The next open must still be able to start.
+            void e;
+        }
+    }
+
+    /**
+     * Remove TinyMCE instances whose textarea is no longer in the document.
+     *
+     * Closing the modal from the keyboard detaches the editor before this
+     * module can walk the modal body.
+     */
+    function releaseDetachedEditors() {
+        if (!window.tinymce || typeof window.tinymce.get !== 'function') {
+            return;
+        }
+        window.tinymce.get().forEach((editor) => {
+            if (editor.removed) {
+                return;
+            }
+            let element = null;
+            try {
+                element = editor.getElement();
+            } catch (e) {
+                void e;
+            }
+            if (!element || !element.isConnected) {
+                removeEditor(editor);
+            }
+        });
+    }
+
+    /**
+     * Destroy TinyMCE instances that belong to this modal.
+     *
+     * TinyMCE registers an editor by textarea id. Hiding the modal leaves that
+     * editor in place, so the next open cannot start another one on the same id.
+     *
+     * @param {Object} modal Save/cancel modal
+     */
+    function destroyModalEditors(modal) {
+        eachModalEditor(modal, removeEditor);
+        releaseDetachedEditors();
+    }
+
+    /**
+     * Remove the modal after its editors have been destroyed.
+     *
+     * TinyMCE must leave the page outside the click that closed the modal.
+     *
+     * @param {Object} modal Save/cancel modal
+     */
+    function closeModal(modal) {
+        window.setTimeout(() => {
+            destroyModalEditors(modal);
+            modal.destroy();
+        }, 1);
+    }
+
+    /**
      * Drop the editor session when the modal closes without saving.
      *
      * @param {Object} modal Save/cancel modal
@@ -191,6 +299,7 @@ define([
         }
         saving = true;
         clearErrors(modal);
+        saveModalEditors(modal);
         const layout = form.querySelector('input[name="layout"]:checked');
         const content = form.querySelector('[name="content_editor[text]"]');
         const contentformat = form.elements['content_editor[format]'];
@@ -230,7 +339,7 @@ define([
             }
             state.saved = true;
             options.onSaved(payload.html);
-            modal.hide();
+            closeModal(modal);
             return;
         }).catch((error) => {
             saving = false;
@@ -251,6 +360,7 @@ define([
          */
         open: function(options) {
             const state = {saved: false};
+            releaseDetachedEditors();
             Str.get_string('edit', 'slideshow').then((title) => {
                 return ModalSaveCancel.create({
                     title: title,
@@ -275,6 +385,20 @@ define([
                 modal.getRoot().on(ModalEvents.save, (event) => {
                     event.preventDefault();
                     submitQuickEdit(modal, options, state);
+                });
+                modal.getRoot()[0].addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        destroyModalEditors(modal);
+                    }
+                }, true);
+                modal.getRoot().on(ModalEvents.cancel, (event) => {
+                    event.preventDefault();
+                    closeModal(modal);
+                });
+                modal.getRoot().on(ModalEvents.destroyed, () => {
+                    window.setTimeout(() => {
+                        destroyModalEditors(modal);
+                    }, 1);
                 });
                 modal.getRoot().on(ModalEvents.hidden, () => {
                     if (!state.saved) {

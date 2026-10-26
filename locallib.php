@@ -172,6 +172,26 @@ function slideshow_quick_edit_uses_moodle_editor(context $context): bool {
 }
 
 /**
+ * Take the required-field note out of a rendered form.
+ *
+ * The player modal appends the Dixeo editor after the form. The note is then
+ * placed after that editor, which is where it sits when the Moodle editor is
+ * the last field inside the form.
+ *
+ * @param string $html Rendered form markup.
+ * @return string The note markup, or an empty string when the form has none.
+ */
+function slideshow_extract_required_note(string &$html): string {
+    $note = '';
+    $pattern = '#<div class="fdescription required" aria-hidden="true">.*?</div>#s';
+    if (preg_match($pattern, $html, $matches)) {
+        $note = $matches[0];
+        $html = str_replace($matches[0], '', $html);
+    }
+    return $note;
+}
+
+/**
  * Sanitize slide HTML for storage (defense in depth; same policy as display cleaning).
  *
  * @param string $content Raw slide HTML.

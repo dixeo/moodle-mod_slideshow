@@ -316,6 +316,27 @@ final class quick_edit_test extends \advanced_testcase {
     }
 
     /**
+     * The required-field note can be moved out of the form to follow the Dixeo editor.
+     *
+     * @covers ::slideshow_extract_required_note
+     */
+    public function test_required_note_is_taken_out_of_the_form(): void {
+        global $CFG;
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        $html = '<form><fieldset><div>fields</div>' .
+            '<div class="fdescription required" aria-hidden="true"><span class="req">*</span> Required</div>' .
+            '</fieldset></form>';
+        $note = slideshow_extract_required_note($html);
+
+        $this->assertStringContainsString('fdescription required', $note);
+        $this->assertStringContainsString('Required', $note);
+        $this->assertStringNotContainsString('fdescription required', $html);
+        $this->assertStringContainsString('fields', $html);
+    }
+
+    /**
      * The embedded editor shows the prompt bar and not the full-page OK button.
      *
      * @covers \local_dixeo_editor\output\embedded_editor::render
