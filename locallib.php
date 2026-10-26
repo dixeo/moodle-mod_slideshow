@@ -371,6 +371,102 @@ function slideshow_render_slide_html(
 }
 
 /**
+ * Player markup for one slide, including formatted body text and the slide image.
+ *
+ * @param stdClass $slide Slide row.
+ * @param \context $context Module context.
+ * @param bool $hidden True when this slide is not the one shown first.
+ * @return string
+ */
+function slideshow_render_player_slide(stdClass $slide, \context $context, bool $hidden = false): string {
+    $layout = slideshow_normalize_layout($slide->layout ?? null);
+    $content = '';
+    $imageurl = null;
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $content = file_rewrite_pluginfile_urls(
+            (string) ($slide->content ?? ''),
+            'pluginfile.php',
+            $context->id,
+            'mod_slideshow',
+            'content',
+            (int) $slide->id
+        );
+        $formatoptions = new stdClass();
+        $formatoptions->overflowdiv = true;
+        $formatoptions->context = $context;
+        $content = format_text($content, (int) ($slide->contentformat ?? FORMAT_HTML), $formatoptions);
+        $content = slideshow_balance_slide_html($content, (int) $slide->id);
+    }
+    if (
+        $layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT
+    ) {
+        $imageurl = slideshow_get_slide_image_url($context, (int) $slide->id);
+    }
+    return slideshow_render_slide_html($slide, $content, $imageurl, $hidden);
+}
+
+/**
+ * Save the title, layout, and image of an existing slide.
+ *
+ * The stored body is left unchanged. Title only does not replace the stored image.
+ *
+ * @param stdClass $slide Existing slideshow_slide row that belongs to this module.
+ * @param \context $context Module context.
+ * @param stdClass $data Submitted name, layout, and image draft item id.
+ * @return array{errors: array<string, string>, html?: string} Field errors, or rendered slide HTML when saved.
+ */
+function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass $data): array {
+    global $DB;
+
+    require_capability('mod/slideshow:viewslides', $context);
+
+    $errors = [];
+    $name = trim((string) ($data->name ?? ''));
+    if ($name === '') {
+        $errors['name'] = get_string('required');
+    } else if (\core_text::strlen($name) > 255) {
+        $errors['name'] = get_string('maximumchars', '', 255);
+    }
+
+    $layout = $data->layout ?? '';
+    if (!is_string($layout) || !isset(slideshow_get_layouts()[$layout])) {
+        $errors['layoutgroup'] = get_string('layoutinvalid', 'slideshow');
+    }
+    if ($errors !== []) {
+        return ['errors' => $errors];
+    }
+
+    $data->name = $name;
+    $data->id = (int) $slide->id;
+    $data->hidden = (int) $slide->hidden;
+    $record = slideshow_prepare_slide_save_record($data, (int) $slide->slideshow, false);
+    $DB->update_record('slideshow_slide', $record);
+
+    if ($record->layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        file_save_draft_area_files(
+            (int) ($data->image ?? 0),
+            $context->id,
+            'mod_slideshow',
+            'image',
+            (int) $slide->id,
+            slideshow_get_image_file_options()
+        );
+    }
+
+    $slideshow = $DB->get_record('slideshow', ['id' => $slide->slideshow], '*', MUST_EXIST);
+    $updated = $DB->get_record('slideshow_slide', ['id' => $slide->id], '*', MUST_EXIST);
+    $event = \mod_slideshow\event\slide_updated::create_from_slide($slideshow, $context, $updated);
+    $event->trigger();
+
+    return [
+        'errors' => [],
+        'html' => slideshow_render_player_slide($updated, $context, false),
+    ];
+}
+
+/**
  * Miniature of one slide for the slides management list.
  *
  * Uses the player markup, scaled by CSS. An image is the cached thumb preview, not the original file.

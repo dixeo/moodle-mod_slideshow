@@ -49,4 +49,12 @@ $functions = [
         'ajax' => true,
         'capabilities' => 'mod/slideshow:manageslides',
     ],
+    'mod_slideshow_save_slide' => [
+        'classname' => 'mod_slideshow\external\save_slide',
+        'methodname' => 'execute',
+        'description' => 'Save the slide open in the player modal',
+        'type' => 'write',
+        'ajax' => true,
+        'capabilities' => 'mod/slideshow:viewslides',
+    ],
 ];

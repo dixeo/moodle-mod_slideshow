@@ -312,11 +312,21 @@ define([
                 }
 
                 /**
-                 * Navigate to the edit page for the current slide.
+                 * Replace the visible slide after a modal save and fit it again.
+                 *
+                 * @param {String} html Player markup for the saved slide
                  */
-                function editSlide() {
-                    let slideid = slides[current].getAttribute('data-slideid');
-                    window.location.href = Config.wwwroot + '/mod/slideshow/edit.php?cm=' + options.cmid + '&id=' + slideid;
+                function replaceCurrentSlide(html) {
+                    let holder = document.createElement('template');
+                    holder.innerHTML = html.trim();
+                    let fresh = holder.content.firstElementChild;
+                    if (!fresh) {
+                        return;
+                    }
+                    slides[current].replaceWith(fresh);
+                    slides = container.querySelectorAll(Selectors.slides);
+                    updateSlideDimensions();
+                    ensureSlideSize(slides[current]);
                 }
 
                 // Set width and height for the QR Code container
@@ -473,10 +483,17 @@ define([
                     }
                 });
 
-                // Edit slide button (only in DOM for users with mod/slideshow:viewslides).
-                if (editslide) {
+                // Cog (only in the DOM for users with mod/slideshow:viewslides).
+                if (editslide && options.contextid) {
                     editslide.addEventListener('click', () => {
-                        editSlide();
+                        require(['mod_slideshow/quickedit'], (Quickedit) => {
+                            Quickedit.open({
+                                cmid: options.cmid,
+                                contextid: options.contextid,
+                                slideid: Number(slides[current].getAttribute('data-slideid')),
+                                onSaved: replaceCurrentSlide,
+                            });
+                        });
                     });
                 }
 

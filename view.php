@@ -63,6 +63,9 @@ $slides = $DB->get_records('slideshow_slide', ['slideshow' => $cm->instance, 'hi
 
 if ($slides) {
     $jsparams = ['cmid' => $cm->id];
+    if (has_capability('mod/slideshow:viewslides', $context)) {
+        $jsparams['contextid'] = $context->id;
+    }
 
     // Get sharecourse link.
     if (class_exists('\local_sharecourse\sharecourse_helper')) {
@@ -77,34 +80,8 @@ if ($slides) {
 $slidedata = [];
 $firstslide = true;
 foreach ($slides as $slide) {
-    $layout = slideshow_normalize_layout($slide->layout ?? null);
-    $content = '';
-    $imageurl = null;
-    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
-        $content = file_rewrite_pluginfile_urls(
-            $slide->content,
-            'pluginfile.php',
-            $context->id,
-            'mod_slideshow',
-            'content',
-            $slide->id
-        );
-        $formatoptions = new stdClass();
-        $formatoptions->overflowdiv = true;
-        $formatoptions->context = $context;
-        $content = format_text($content, $slide->contentformat, $formatoptions);
-        $content = slideshow_balance_slide_html($content, (int) $slide->id);
-    }
-    if (
-        $layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND
-        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT
-        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT
-    ) {
-        $imageurl = slideshow_get_slide_image_url($context, (int) $slide->id);
-    }
-
     $slidedata[] = [
-        'html' => slideshow_render_slide_html($slide, $content, $imageurl, !$firstslide),
+        'html' => slideshow_render_player_slide($slide, $context, !$firstslide),
     ];
     $firstslide = false;
 }

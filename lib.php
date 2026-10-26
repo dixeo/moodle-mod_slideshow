@@ -813,3 +813,52 @@ function slideshow_add_button_to_activity_menu($page) {
 
     return $actions;
 }
+
+/**
+ * Quick-edit form for the slide currently shown in the player.
+ *
+ * @param array $args Fragment arguments with cmid and slideid.
+ * @return string
+ */
+function mod_slideshow_output_fragment_quickedit(array $args): string {
+    global $CFG, $DB;
+
+    require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+    require_once($CFG->libdir . '/formslib.php');
+
+    $cmid = clean_param($args['cmid'] ?? 0, PARAM_INT);
+    $slideid = clean_param($args['slideid'] ?? 0, PARAM_INT);
+    if (!$cmid || !$slideid) {
+        throw new \moodle_exception('invalidaccessparameter');
+    }
+
+    $cm = get_coursemodule_from_id('slideshow', $cmid, 0, false, MUST_EXIST);
+    $context = context_module::instance($cm->id);
+    require_capability('mod/slideshow:viewslides', $context);
+
+    $slide = $DB->get_record('slideshow_slide', [
+        'id' => $slideid,
+        'slideshow' => $cm->instance,
+    ], '*', MUST_EXIST);
+
+    $draftid = 0;
+    file_prepare_draft_area(
+        $draftid,
+        $context->id,
+        'mod_slideshow',
+        'image',
+        (int) $slide->id,
+        slideshow_get_image_file_options()
+    );
+
+    $form = new \mod_slideshow\form\quick_edit_form(null, ['cm' => $cm]);
+    $form->set_data((object) [
+        'id' => (int) $slide->id,
+        'cmid' => (int) $cm->id,
+        'name' => $slide->name,
+        'layout' => slideshow_normalize_layout($slide->layout ?? null),
+        'image' => $draftid,
+    ]);
+
+    return html_writer::div($form->render(), 'slideshow-quick-edit');
+}
