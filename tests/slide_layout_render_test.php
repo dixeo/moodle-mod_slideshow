@@ -298,4 +298,124 @@ final class slide_layout_render_test extends \advanced_testcase {
         $this->assertStringContainsString('preview=thumb', $html);
         $this->assertStringContainsString('Setbacks', $html);
     }
+
+    /**
+     * The player offers the image editor only for a stored featured file the user may edit.
+     *
+     * @covers ::slideshow_render_player_slide
+     */
+    public function test_player_image_editor_requires_file_and_capability(): void {
+        global $CFG, $DB;
+
+        if (
+            !class_exists(\filter_dixeo_imageeditor\adapter\feature_gate::class)
+            || !class_exists(\local_dixeo\external\service_factory::class)
+        ) {
+            $this->markTestSkipped('filter_dixeo_imageeditor is not installed');
+        }
+
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+        $course = $this->getDataGenerator()->create_course();
+        $slideshow = $this->getDataGenerator()->create_module('slideshow', ['course' => $course->id]);
+        $context = \context_module::instance($slideshow->cmid);
+        $generator = $this->getDataGenerator()->get_plugin_generator('mod_slideshow');
+
+        $this->setAdminUser();
+        filter_set_global_state('dixeo_imageeditor', TEXTFILTER_ON);
+        $config = \local_dixeo\external\service_factory::get_settings_config();
+        $config->set('local_dixeo', 'enabled', \context_system::instance(), '1');
+        $config->set('local_dixeo', 'enabled', \context_course::instance($course->id), '1');
+
+        $empty = $DB->get_record('slideshow_slide', ['id' => $generator->create_slide([
+            'slideshow' => $slideshow->id,
+            'name' => 'No photo',
+            'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+            'content' => '<p>Text only</p>',
+        ])], '*', MUST_EXIST);
+        $emptyhtml = slideshow_render_player_slide($empty, $context, false);
+        $this->assertStringNotContainsString('data-dixeo-imageeditor', $emptyhtml);
+
+        $titleonly = $DB->get_record('slideshow_slide', ['id' => $generator->create_slide([
+            'slideshow' => $slideshow->id,
+            'name' => 'Opening',
+            'layout' => MOD_SLIDESHOW_LAYOUT_TITLEONLY,
+            'content' => '',
+        ])], '*', MUST_EXIST);
+        $fs = get_file_storage();
+        $fs->create_file_from_string([
+            'contextid' => $context->id,
+            'component' => 'mod_slideshow',
+            'filearea' => 'image',
+            'itemid' => $titleonly->id,
+            'filepath' => '/',
+            'filename' => 'opening.png',
+        ], 'png');
+        $titlehtml = slideshow_render_player_slide($titleonly, $context, false);
+        $this->assertStringNotContainsString('data-dixeo-imageeditor', $titlehtml);
+
+        $slide = $DB->get_record('slideshow_slide', ['id' => $generator->create_slide([
+            'slideshow' => $slideshow->id,
+            'name' => 'Photo slide',
+            'layout' => MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+            'content' => '<p>Setbacks</p>',
+        ])], '*', MUST_EXIST);
+        $fs->create_file_from_string([
+            'contextid' => $context->id,
+            'component' => 'mod_slideshow',
+            'filearea' => 'image',
+            'itemid' => $slide->id,
+            'filepath' => '/',
+            'filename' => 'cover.png',
+        ], 'png');
+
+        $html = slideshow_render_player_slide($slide, $context, false);
+        $this->assertStringContainsString('data-dixeo-imageeditor="1"', $html);
+        $this->assertStringContainsString('data-component="mod_slideshow"', $html);
+        $this->assertStringContainsString('data-filearea="image"', $html);
+        $this->assertStringContainsString('data-itemid="' . $slide->id . '"', $html);
+        $this->assertStringContainsString('data-filename="cover.png"', $html);
+        $this->assertStringContainsString('data-slideshow-slide="1"', $html);
+        $this->assertStringNotContainsString('data-dixeo-pending', $html);
+        $backdrop = strpos($html, 'aria-hidden="true"');
+        $editor = strpos($html, 'data-dixeo-imageeditor');
+        $this->assertNotFalse($backdrop);
+        $this->assertGreaterThan($backdrop, $editor);
+
+        $split = $DB->get_record('slideshow_slide', ['id' => $generator->create_slide([
+            'slideshow' => $slideshow->id,
+            'name' => 'Beside the photo',
+            'layout' => MOD_SLIDESHOW_LAYOUT_CONTENTLEFT,
+            'content' => '<p>Beside</p>',
+        ])], '*', MUST_EXIST);
+        $fs->create_file_from_string([
+            'contextid' => $context->id,
+            'component' => 'mod_slideshow',
+            'filearea' => 'image',
+            'itemid' => $split->id,
+            'filepath' => '/',
+            'filename' => 'side.png',
+        ], 'png');
+        $splithtml = slideshow_render_player_slide($split, $context, false);
+        $this->assertMatchesRegularExpression(
+            '/class="slide-media"[^>]*>\s*<div class="dixeo-imageeditor-wrap/',
+            $splithtml
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/class="slide-media"[^>]*aria-hidden/',
+            $splithtml
+        );
+
+        $student = $this->getDataGenerator()->create_user();
+        $this->setUser($student);
+        $denied = slideshow_render_player_slide($slide, $context, false);
+        $this->assertStringNotContainsString('data-dixeo-imageeditor', $denied);
+
+        $this->setAdminUser();
+        $file = slideshow_get_slide_image_file($context, (int) $slide->id);
+        $location = \local_dixeo\service\image\content\location::from_stored_file($file);
+        \local_dixeo\repository\image\job_repository::create_job($location, 'slideshow-featured-pending', 2);
+        $pending = slideshow_render_player_slide($slide, $context, false);
+        $this->assertStringContainsString('data-dixeo-pending="1"', $pending);
+    }
 }

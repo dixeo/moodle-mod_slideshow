@@ -296,6 +296,7 @@ body.path-mod-slideshow .slideshow-container .slide-split .slide-body {
 }
 
 body.path-mod-slideshow .slideshow-container .slide-media {
+    position: relative;
     background-color: #eef2f6;
     background-position: center;
     background-repeat: no-repeat;

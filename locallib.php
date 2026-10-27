@@ -370,6 +370,32 @@ function slideshow_normalize_layout(?string $layout): string {
  * @return string|null URL, or null when the slide has no image.
  */
 function slideshow_get_slide_image_url(\context $context, int $slideid, bool $thumbnail = false): ?string {
+    $file = slideshow_get_slide_image_file($context, $slideid);
+    if ($file === null) {
+        return null;
+    }
+    $url = moodle_url::make_pluginfile_url(
+        $context->id,
+        'mod_slideshow',
+        'image',
+        $slideid,
+        $file->get_filepath(),
+        $file->get_filename()
+    );
+    if ($thumbnail) {
+        return $url->out(false, ['preview' => 'thumb']);
+    }
+    return $url->out(false);
+}
+
+/**
+ * Stored featured image for a slide, when one file exists.
+ *
+ * @param \context $context Module context.
+ * @param int $slideid Slide id, used as the file itemid.
+ * @return \stored_file|null
+ */
+function slideshow_get_slide_image_file(\context $context, int $slideid): ?\stored_file {
     $fs = get_file_storage();
     $files = $fs->get_area_files(
         $context->id,
@@ -383,20 +409,99 @@ function slideshow_get_slide_image_url(\context $context, int $slideid, bool $th
         if ($file->is_directory()) {
             continue;
         }
-        $url = moodle_url::make_pluginfile_url(
-            $context->id,
-            'mod_slideshow',
-            'image',
-            $slideid,
-            $file->get_filepath(),
-            $file->get_filename()
-        );
-        if ($thumbnail) {
-            return $url->out(false, ['preview' => 'thumb']);
-        }
-        return $url->out(false);
+        return $file;
     }
     return null;
+}
+
+/**
+ * Whether the current user may edit this module's featured images.
+ *
+ * The control is shown only when the image-editor filter is installed and active,
+ * Dixeo is on for the course, and the user has the filter edit capability. The
+ * editor webservice rejects anyone else.
+ *
+ * @param \context $context Module context.
+ * @return bool
+ */
+function slideshow_featured_image_editor_allowed(\context $context): bool {
+    if (!class_exists(\filter_dixeo_imageeditor\adapter\feature_gate::class)) {
+        return false;
+    }
+    if (!\filter_dixeo_imageeditor\adapter\feature_gate::is_globally_enabled()) {
+        return false;
+    }
+    if (!class_exists(\local_dixeo\external\service_factory::class)) {
+        return false;
+    }
+    $coursecontext = $context->get_course_context(false);
+    if (!$coursecontext instanceof \context) {
+        return false;
+    }
+    if (!\local_dixeo\external\service_factory::get_settings_config()->enabled_for($coursecontext)) {
+        return false;
+    }
+    return has_capability('filter/dixeo_imageeditor:edit', $coursecontext);
+}
+
+/**
+ * Whether a content-image job is still running for this featured file.
+ *
+ * @param \stored_file $file Stored featured image.
+ * @return bool
+ */
+function slideshow_featured_image_job_pending(\stored_file $file): bool {
+    if (!class_exists(\local_dixeo\service\image\content\location::class)) {
+        return false;
+    }
+    if (!class_exists(\local_dixeo\repository\image\job_repository::class)) {
+        return false;
+    }
+    $location = \local_dixeo\service\image\content\location::from_stored_file($file);
+    $pending = \local_dixeo\repository\image\job_repository::get_pending_locationhashes([$location->hash()]);
+    return $pending !== [];
+}
+
+/**
+ * Image-editor control for a featured slide file.
+ *
+ * The button sits on the slide, outside the backdrop, and uses the same attributes
+ * the text filter writes onto an img. An empty string means editing is closed.
+ * A pending job sets data-dixeo-pending so the existing poller watches this file.
+ *
+ * @param \context $context Module context.
+ * @param \stored_file $file Stored featured image.
+ * @return string
+ */
+function slideshow_render_featured_image_editor(\context $context, \stored_file $file): string {
+    if (!slideshow_featured_image_editor_allowed($context)) {
+        return '';
+    }
+    $coursecontext = $context->get_course_context(false);
+    $courseid = $coursecontext instanceof \context ? (int) $coursecontext->instanceid : 0;
+    $label = get_string('editimage', 'filter_dixeo_imageeditor');
+    $button = html_writer::tag('button', $label, [
+        'type' => 'button',
+        'class' => 'btn btn-sm dixeo-imageeditor-editbtn',
+        'data-action' => 'open-editor',
+        'aria-label' => $label,
+    ]);
+    $attrs = [
+        'data-dixeo-imageeditor' => '1',
+        'data-slideshow-slide' => '1',
+        'data-contextid' => $file->get_contextid(),
+        'data-component' => $file->get_component(),
+        'data-filearea' => $file->get_filearea(),
+        'data-itemid' => $file->get_itemid(),
+        'data-filepath' => $file->get_filepath(),
+        'data-filename' => $file->get_filename(),
+        'data-courseid' => $courseid,
+        'data-contenthash' => $file->get_contenthash(),
+    ];
+    if (slideshow_featured_image_job_pending($file)) {
+        $attrs['data-dixeo-pending'] = '1';
+    }
+    return html_writer::div($button, 'dixeo-imageeditor-wrap dixeo-slideshow-imageeditor', $attrs);
 }
 
 /**
@@ -411,13 +516,15 @@ function slideshow_get_slide_image_url(\context $context, int $slideid, bool $th
  * @param string $contenthtml Already formatted slide body.
  * @param string|null $imageurl Slide image URL, or null when no file is stored.
  * @param bool $hidden True when the slide is not the one shown first.
+ * @param string $editorhtml Image-editor control. A background slide keeps it on the slide; a split layout places it on the image.
  * @return string
  */
 function slideshow_render_slide_html(
     stdClass $slide,
     string $contenthtml,
     ?string $imageurl,
-    bool $hidden = false
+    bool $hidden = false,
+    string $editorhtml = ''
 ): string {
     $layout = slideshow_normalize_layout($slide->layout ?? null);
     $hasimage = slideshow_layout_shows_image($layout) && $imageurl !== null && $imageurl !== '';
@@ -438,12 +545,21 @@ function slideshow_render_slide_html(
     if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
         $body = html_writer::div($contenthtml, 'slide-body');
         if (slideshow_layout_is_split($layout)) {
-            $mediaattrs = ['aria-hidden' => 'true'];
+            // The editor sits on the image. The media box stays exposed to assistive
+            // technology when that button is inside it.
+            $editorinmedia = $editorhtml !== '';
+            $mediaattrs = [];
             if ($hasimage) {
                 $mediaattrs['style'] = 'background-image:url("' . $imageurl . '")';
             }
-            $media = html_writer::div('', 'slide-media', $mediaattrs);
+            if (!$editorinmedia) {
+                $mediaattrs['aria-hidden'] = 'true';
+            }
+            $media = html_writer::div($editorinmedia ? $editorhtml : '', 'slide-media', $mediaattrs);
             $inner .= html_writer::div($media . $body, 'slide-split');
+            if ($editorinmedia) {
+                $editorhtml = '';
+            }
         } else {
             $inner .= $body;
         }
@@ -459,7 +575,7 @@ function slideshow_render_slide_html(
         $inner = html_writer::div($inner, 'slide-layout');
     }
 
-    return html_writer::div($inner, $classes, [
+    return html_writer::div($inner . $editorhtml, $classes, [
         'data-slideid' => (int) ($slide->id ?? 0),
         'data-layout' => $layout,
     ]);
@@ -477,6 +593,7 @@ function slideshow_render_player_slide(stdClass $slide, \context $context, bool 
     $layout = slideshow_normalize_layout($slide->layout ?? null);
     $content = '';
     $imageurl = null;
+    $editorhtml = '';
     if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
         $content = file_rewrite_pluginfile_urls(
             (string) ($slide->content ?? ''),
@@ -493,9 +610,20 @@ function slideshow_render_player_slide(stdClass $slide, \context $context, bool 
         $content = slideshow_balance_slide_html($content, (int) $slide->id);
     }
     if (slideshow_layout_shows_image($layout)) {
-        $imageurl = slideshow_get_slide_image_url($context, (int) $slide->id);
+        $file = slideshow_get_slide_image_file($context, (int) $slide->id);
+        if ($file !== null) {
+            $imageurl = moodle_url::make_pluginfile_url(
+                $context->id,
+                'mod_slideshow',
+                'image',
+                (int) $slide->id,
+                $file->get_filepath(),
+                $file->get_filename()
+            )->out(false);
+            $editorhtml = slideshow_render_featured_image_editor($context, $file);
+        }
     }
-    return slideshow_render_slide_html($slide, $content, $imageurl, $hidden);
+    return slideshow_render_slide_html($slide, $content, $imageurl, $hidden, $editorhtml);
 }
 
 /**
