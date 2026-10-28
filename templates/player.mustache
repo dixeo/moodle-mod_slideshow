@@ -1,0 +1,92 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_slideshow/player
+
+    Learner-facing slideshow player.
+
+    @copyright 2026 Dixeo
+
+    Classes required for JS:
+    * slide, prev, next, currentslide, fontsize, overlay, scantoenrol, qrcode, fullscreen, editslide
+
+    Context variables required for this template:
+    * cmid
+    * hasslides
+    * slides
+    * slidecount
+    * singleslide
+    * watermarkurl
+    * caneditslides
+    * showqr
+    * addslideurl
+    * previcon
+    * nexticon
+    * decreaseicon
+    * increaseicon
+    * fullscreenicon
+
+    Example context (json):
+    {
+        "cmid": 1,
+        "hasslides": true,
+        "slides": [{"id": 10, "content": "<p>Hello</p>", "first": true}],
+        "slidecount": 1,
+        "singleslide": true,
+        "watermarkurl": "https://example.com/theme/image.php/boost/slideshow/1/dixeo",
+        "caneditslides": true,
+        "showqr": false,
+        "addslideurl": "https://example.com/mod/slideshow/edit.php?cm=1",
+        "previcon": "<i class=\"icon fa fa-chevron-left\"></i>",
+        "nexticon": "<i class=\"icon fa fa-chevron-right\"></i>",
+        "decreaseicon": "<i class=\"icon fa fa-font decrease\"></i>",
+        "increaseicon": "<i class=\"icon fa fa-font increase\"></i>",
+        "fullscreenicon": "<i class=\"icon fa fa-expand\"></i>"
+    }
+}}
+{{#hasslides}}
+<div id="slideshow-{{cmid}}" class="box py-3 slideshow-container generalbox center clearfix">
+    <div class="overlay hidden">
+        <div class="scantoenrol">{{#str}}scantoenrol, slideshow{{/str}}</div>
+    </div>
+    {{#slides}}
+        <div class="slide no-overflow{{^first}} hidden{{/first}}" data-slideid="{{id}}">
+            {{{content}}}
+        </div>
+    {{/slides}}
+    <div class="watermark">
+        <img class="watermark" src="{{watermarkurl}}" alt="{{#str}}watermark, slideshow{{/str}}">
+    </div>
+    <div class="slidecontrols">{{!
+    }}<span class="navbuttons"><span class="prev disabled">{{{previcon}}}</span><span class="next{{#singleslide}} disabled{{/singleslide}}">{{{nexticon}}}</span></span>{{!
+    }}<span class="currentslide">1/{{slidecount}}</span>{{!
+    }}<div class="controls">{{{decreaseicon}}}<input id="fontsize-slider" class="fontsize" type="range" min="10" max="500" step="5" value="125">{{{increaseicon}}}{{#showqr}}<span class="qrcode"><i class="icon fa fa-solid fa-qrcode fa-fw" title="{{#str}}qrcode, slideshow{{/str}}" role="img" aria-label="{{#str}}qrcode, slideshow{{/str}}"></i></span>{{/showqr}}<button class="fullscreen" tabindex="0" aria-label="{{#str}}fullscreen, slideshow{{/str}}">{{{fullscreenicon}}}</button></div>{{!
+    }}</div>
+</div>
+{{#caneditslides}}
+    <a href="#" class="editslide btn btn-secondary float-right">{{#str}}edit, slideshow{{/str}}</a>
+{{/caneditslides}}
+{{/hasslides}}
+{{^hasslides}}
+<div class="box py-3 generalbox slideshow-empty clearfix">
+    <p>{{#str}}noslides, slideshow{{/str}}</p>
+    {{#caneditslides}}
+        <p>{{#str}}noslides_teacherhint, slideshow{{/str}}</p>
+        <a href="{{addslideurl}}" class="btn btn-primary">{{#str}}addnew, slideshow{{/str}}</a>
+    {{/caneditslides}}
+</div>
+{{/hasslides}}

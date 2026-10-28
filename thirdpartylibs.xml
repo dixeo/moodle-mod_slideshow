@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <libraries>
   <library>
-    <location>js/slip.js</location>
+    <location>thirdparty/slip/slip.js</location>
     <name>Slip.js</name>
-    <description>Touch and pointer list swipe/reorder events for DOM lists.</description>
+    <description>Touch and pointer list swipe/reorder events for DOM lists. Loaded by the AMD module amd/src/slip.js.</description>
     <version>1.0</version>
     <license>BSD</license>
     <licenseversion>2-Clause</licenseversion>
@@ -14,9 +14,9 @@
     <customised/>
   </library>
   <library>
-    <location>js/qrcode-wrapper.js</location>
+    <location>thirdparty/qrcodejs/qrcode.js</location>
     <name>qrcodejs (QRCode for JavaScript)</name>
-    <description>Cross-browser QR code generator; minified upstream build embedded in the AMD wrapper.</description>
+    <description>Cross-browser QR code generator. Loaded by the AMD module amd/src/qrcode.js.</description>
     <version>0.0.1</version>
     <license>MIT</license>
     <licenseversion></licenseversion>
