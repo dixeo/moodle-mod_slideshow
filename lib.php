@@ -366,14 +366,16 @@ function slideshow_pluginfile($course, $cm, $context, $filearea, $args, $forcedo
 }
 
 /**
- * Return a list of slideshow types
- * @param string $slideshowtype current slideshow type
+ * Return a list of page types.
+ *
+ * @param string $pagetype Current page type
  * @param stdClass $parentcontext Block's parent context
  * @param stdClass $currentcontext Current context of block
+ * @return array Page-type pattern and its label
  */
-function slideshow_slideshow_type_list($slideshowtype, $parentcontext, $currentcontext) {
-    $moduleslideshowtype = ['mod-slideshow-*' => get_string('slideshow-mod-slideshow-x', 'slideshow')];
-    return $moduleslideshowtype;
+function slideshow_page_type_list($pagetype, $parentcontext, $currentcontext) {
+    $modulepagetype = ['mod-slideshow-*' => get_string('page-mod-slideshow-x', 'mod_slideshow')];
+    return $modulepagetype;
 }
 
 /**

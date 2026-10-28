@@ -49,6 +49,7 @@ $string['modulenameplural'] = 'Presentaciones de diapositivas';
 $string['next'] = 'Siguiente diapositiva';
 $string['noslides'] = 'Esta presentación de diapositivas está vacía.';
 $string['noslides_teacherhint'] = 'Añada una nueva diapositiva para mostrar contenido aquí.';
+$string['page-mod-slideshow-x'] = 'Cualquier página del módulo de presentación de diapositivas';
 $string['pluginadministration'] = 'Administración del módulo de presentación de diapositivas';
 $string['pluginname'] = 'Presentación de diapositivas';
 $string['popupheight'] = 'Altura de la ventana emergente (en píxeles)';

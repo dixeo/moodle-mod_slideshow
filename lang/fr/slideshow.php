@@ -49,6 +49,7 @@ $string['modulenameplural'] = 'Diaporamas';
 $string['next'] = 'Diapositive suivante';
 $string['noslides'] = 'Ce diaporama est vide.';
 $string['noslides_teacherhint'] = 'Ajoutez une nouvelle diapositive pour afficher du contenu ici.';
+$string['page-mod-slideshow-x'] = 'Toute page du module Diaporama';
 $string['pluginadministration'] = 'Administration du module Diaporama';
 $string['pluginname'] = 'Diaporama';
 $string['popupheight'] = 'Hauteur de la fenêtre pop-up (en pixels)';

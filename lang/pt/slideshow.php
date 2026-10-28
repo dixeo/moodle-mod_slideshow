@@ -49,6 +49,7 @@ $string['modulenameplural'] = 'Apresentações de diapositivos';
 $string['next'] = 'Diapositivo seguinte';
 $string['noslides'] = 'Esta apresentação está vazia.';
 $string['noslides_teacherhint'] = 'Adicione um novo slide para mostrar conteúdo aqui.';
+$string['page-mod-slideshow-x'] = 'Qualquer página do módulo de apresentação';
 $string['pluginadministration'] = 'Administração do módulo de apresentação';
 $string['pluginname'] = 'Apresentação de diapositivos';
 $string['popupheight'] = 'Altura do pop-up (em pixels)';

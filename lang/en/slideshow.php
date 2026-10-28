@@ -49,6 +49,7 @@ $string['modulenameplural'] = 'Slideshows';
 $string['next'] = 'Next slide';
 $string['noslides'] = 'This slideshow is empty.';
 $string['noslides_teacherhint'] = 'Add a new slide to show content here.';
+$string['page-mod-slideshow-x'] = 'Any slideshow module page';
 $string['pluginadministration'] = 'Slideshow module administration';
 $string['pluginname'] = 'Slideshow';
 $string['popupheight'] = 'Pop-up height (in pixels)';
