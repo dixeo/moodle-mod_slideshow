@@ -16,7 +16,7 @@ Learners get a focused **presentation view** with **previous/next navigation**, 
 
 ## Installation
 
-Install via **Site administration → Plugins → Install plugins** using a ZIP of the `slideshow` folder, or deploy the folder under `mod/slideshow` and complete the upgrade prompt.
+Install the release ZIP `mod_slideshow-<release>.zip` under **Site administration → Plugins → Install plugins**, or copy the `slideshow` directory to `mod/slideshow`.
 
 ## Source code
 
