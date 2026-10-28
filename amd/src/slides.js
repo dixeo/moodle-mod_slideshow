@@ -23,12 +23,12 @@
 
 define([
     'core/config',
-    'jquery',
+    'core/ajax',
     'core/modal_save_cancel',
     'core/modal_events',
     'core/str',
     'mod_slideshow/slip',
-], function(Config, $, ModalSaveCancel, ModalEvents, str, Slip) {
+], function(Config, Ajax, ModalSaveCancel, ModalEvents, str, Slip) {
     return {
         init: (slideshow) => {
             var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
@@ -125,27 +125,19 @@ define([
             let changeSortOrder = (slideid, neworder, oldorder) => {
                 var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
 
-                let URL = Config.wwwroot + '/mod/slideshow/ajax.php';
-                let data = {
-                    slideid: slideid,
-                    action: 'reorder',
-                    neworder: neworder,
-                    oldorder: oldorder,
-                    sesskey: Config.sesskey
-                };
-                let settings = {
-                    type: 'POST',
-                    dataType: 'json',
-                    data: data,
-                    async: false
-                };
-
-                $.ajax(URL, settings)
-                .done(function() {
+                return Ajax.call([{
+                    methodname: 'mod_slideshow_reorder_slide',
+                    args: {
+                        slideid: slideid,
+                        oldorder: oldorder,
+                        neworder: neworder,
+                    },
+                }])[0].then(function() {
                     updateSortorderUI(ul);
-                })
-                .fail(function() {
+                    return;
+                }).catch(function() {
                     // Request failed; list order may be stale until refresh.
+                    return;
                 });
             };
 
@@ -172,21 +164,13 @@ define([
             let hideShowSlide = (slideid, action) => {
                 var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
 
-                let URL = Config.wwwroot + '/mod/slideshow/ajax.php';
-                let data = {
-                    slideid: slideid,
-                    action: action,
-                    sesskey: Config.sesskey
-                };
-                let settings = {
-                    type: 'POST',
-                    dataType: 'json',
-                    data: data,
-                    async: false
-                };
-
-                $.ajax(URL, settings)
-                .done(function(response) {
+                return Ajax.call([{
+                    methodname: 'mod_slideshow_set_slide_visibility',
+                    args: {
+                        slideid: slideid,
+                        action: action,
+                    },
+                }])[0].then(function(response) {
                     let slide = ul.querySelector('.slide-item[data-id="' + slideid + '"]');
                     let hide = slide.querySelector('.actions .hide');
                     let show = slide.querySelector('.actions .show');
@@ -198,9 +182,10 @@ define([
                         hide.classList.add('hidden');
                         show.classList.remove('hidden');
                     }
-                })
-                .fail(function() {
+                    return;
+                }).catch(function() {
                     // Request failed.
+                    return;
                 });
             };
 
@@ -240,30 +225,21 @@ define([
             let deleteSlide = (slideid) => {
                 var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
 
-                let URL = Config.wwwroot + '/mod/slideshow/ajax.php';
-                let data = {
-                    slideid: slideid,
-                    action: 'delete',
-                    sesskey: Config.sesskey
-                };
-                let settings = {
-                    type: 'POST',
-                    dataType: 'json',
-                    data: data,
-                    async: false
-                };
-
-                $.ajax(URL, settings)
-                .done(function(response) {
-                    let slide = ul.querySelector('.slide-item[data-id="' + slideid + '"]');
-
+                return Ajax.call([{
+                    methodname: 'mod_slideshow_delete_slide',
+                    args: {
+                        slideid: slideid,
+                    },
+                }])[0].then(function(response) {
                     if (response.result) {
+                        let slide = ul.querySelector('.slide-item[data-id="' + slideid + '"]');
                         slide.remove();
                         updateSortorderUI(ul);
                     }
-                })
-                .fail(function() {
+                    return;
+                }).catch(function() {
                     // Request failed.
+                    return;
                 });
             };
         }
