@@ -38,13 +38,13 @@ require_course_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/slideshow:viewslides', $context);
 
-$pluginmanager = \core_plugin_manager::instance();
-if ($slideid && $pluginmanager->get_plugin_info('local_dixeo_editor')) {
+if ($slideid && slideshow_use_dixeo_editor($context)) {
     redirect(new moodle_url('/local/dixeo_editor/content_edition.php', ['cmid' => $cmid, 'slideid' => $slideid]));
 }
 
 $returnurl = new moodle_url('/mod/slideshow/slides.php', ['id' => $cm->id]);
 $editoroptions = slideshow_get_editor_options($context);
+$imageoptions = slideshow_get_image_file_options();
 
 $slide = new stdClass();
 if ($slideid) {
@@ -56,8 +56,21 @@ if ($slideid) {
 } else {
     $slide->content = '';
     $slide->contentformat = FORMAT_HTML;
+    $slide->layout = MOD_SLIDESHOW_LAYOUT_BACKGROUND;
     $slide = file_prepare_standard_editor($slide, 'content', $editoroptions, $context, 'mod_slideshow', 'content', 0);
 }
+
+$imagedraftid = file_get_submitted_draft_itemid('image');
+file_prepare_draft_area(
+    $imagedraftid,
+    $context->id,
+    'mod_slideshow',
+    'image',
+    $slideid ? (int) $slideid : 0,
+    $imageoptions
+);
+$slide->image = $imagedraftid;
+$slide->layout = slideshow_normalize_layout($slide->layout ?? null);
 
 $url = new moodle_url('/mod/slideshow/edit.php', ['cm' => $cm->id, 'id' => $slideid]);
 $PAGE->set_url($url);
@@ -96,22 +109,34 @@ if ($mform->is_cancelled()) {
     $fromform->id = $record->id;
     $fromform->slideshow = $cm->instance;
 
-    // Save editor files and persist rewritten content.
-    $fromform = file_postupdate_standard_editor(
-        $fromform,
-        'content',
-        $editoroptions,
-        $context,
-        'mod_slideshow',
-        'content',
-        (int) $record->id
-    );
-    $fromform->content = slideshow_sanitize_slide_content(
-        $fromform->content,
-        (int) $fromform->contentformat
-    );
-    $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $record->id]);
-    $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $record->id]);
+    // Title only does not show the body or the image, and the hidden fields are not submitted.
+    // Leave the stored body and image in place so a later layout change still has them.
+    if ($record->layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $fromform = file_postupdate_standard_editor(
+            $fromform,
+            'content',
+            $editoroptions,
+            $context,
+            'mod_slideshow',
+            'content',
+            (int) $record->id
+        );
+        $fromform->content = slideshow_sanitize_slide_content(
+            $fromform->content,
+            (int) $fromform->contentformat
+        );
+        $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $record->id]);
+        $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $record->id]);
+
+        file_save_draft_area_files(
+            (int) ($fromform->image ?? 0),
+            $context->id,
+            'mod_slideshow',
+            'image',
+            (int) $record->id,
+            $imageoptions
+        );
+    }
 
     $slide = $DB->get_record('slideshow_slide', ['id' => $record->id], '*', MUST_EXIST);
     if ($isnewslide) {
@@ -142,6 +167,7 @@ if ($mform->is_cancelled()) {
     $PAGE->set_cm($cm);
 
     $PAGE->activityheader->disable();
+    $PAGE->requires->js_call_amd('mod_slideshow/preview', 'init');
 
     echo $OUTPUT->header();
     echo $OUTPUT->heading_with_help($pageheading, '', 'slideshow');

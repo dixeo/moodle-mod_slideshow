@@ -30,7 +30,7 @@ define([
     'mod_slideshow/slip',
 ], function(Config, Ajax, ModalSaveCancel, ModalEvents, str, Slip) {
     return {
-        init: (slideshow) => {
+        init: (slideshow, contextid) => {
             var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
             if (!ul) {
                 return;
@@ -111,10 +111,52 @@ define([
 
                 editBtn.addEventListener('pointerup', function(e) {
                     e.preventDefault();
-                    let editUrl = Config.wwwroot + '/mod/slideshow/edit.php?cm=' + slideshow + '&id=' + slideid;
-                    window.location.href = editUrl;
+                    if (!contextid) {
+                        return;
+                    }
+                    require(['mod_slideshow/quickedit'], function(Quickedit) {
+                        Quickedit.open({
+                            cmid: Number(slideshow),
+                            contextid: Number(contextid),
+                            slideid: Number(slideid),
+                            onSaved: function(html, payload) {
+                                replaceListSlide(slideid, payload || {html: html});
+                            },
+                        });
+                    });
                 });
             });
+
+            /**
+             * Replace the list thumbnail and label after the edit modal saves.
+             *
+             * @param {Number} slideid Slide ID
+             * @param {Object} payload Save response with preview markup and name
+             */
+            let replaceListSlide = (slideid, payload) => {
+                if (!payload) {
+                    return;
+                }
+                let slide = ul.querySelector('.slide-item[data-id="' + slideid + '"]');
+                if (!slide) {
+                    return;
+                }
+                if (payload.preview) {
+                    let current = slide.querySelector('.slide-list-thumb');
+                    let holder = document.createElement('template');
+                    holder.innerHTML = String(payload.preview).trim();
+                    let fresh = holder.content.firstElementChild;
+                    if (current && fresh) {
+                        current.replaceWith(fresh);
+                    }
+                }
+                if (payload.name) {
+                    let name = slide.querySelector('.name');
+                    if (name) {
+                        name.textContent = payload.name;
+                    }
+                }
+            };
 
             /**
              * Change sort order

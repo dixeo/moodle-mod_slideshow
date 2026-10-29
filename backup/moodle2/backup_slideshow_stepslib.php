@@ -40,7 +40,7 @@ class backup_slideshow_activity_structure_step extends backup_activity_structure
 
         $slides = new backup_nested_element('slides');
         $slide = new backup_nested_element('slide', ['id'], [
-            'slideshow', 'name', 'content', 'contentformat', 'hidden', 'sortorder', 'timemodified',
+            'slideshow', 'name', 'hidetitle', 'content', 'contentformat', 'layout', 'hidden', 'sortorder', 'timemodified',
         ]);
 
         $slideshow->add_child($slides);

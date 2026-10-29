@@ -38,7 +38,7 @@ define([
         scantoenrol: '.scantoenrol',
         qrcode: '.qrcode',
         fullscreen: '.fullscreen',
-        editslide: '.editslide',
+        editslide: '.slideshow-edit-cog',
     };
 
     return {
@@ -78,7 +78,12 @@ define([
                 let overlay = container.querySelector(Selectors.overlay);
                 let scantoenrol = overlay.querySelector(Selectors.scantoenrol);
                 let fontsize = container.querySelector(Selectors.fontsize);
+                let fontsizecontrol = container.querySelector('.fontsize-control');
+                let fontsizepanel = container.querySelector('.fontsize-panel');
+                let fontsizetoggle = container.querySelector('.fontsize-toggle');
                 let fullscreen = container.querySelector(Selectors.fullscreen);
+                // Windowed slides start here. Fullscreen starts at the slider maximum, then shrinks to fit.
+                const fontSizeDefault = Number(fontsize.value);
 
                 // Edit slide button
                 let editslide = document.querySelector(Selectors.editslide);
@@ -137,13 +142,19 @@ define([
                  * Updates the height of the slide container based on the current slide's width (16:9).
                  */
                 function updateSlideDimensions() {
-                    overlay.setAttribute(
-                        'style',
-                        'width: ' + container.offsetWidth + 'px; height: ' + container.offsetWidth * (9 / 16) + 'px;'
-                    );
+                    let height = container.offsetWidth * (9 / 16);
                     slides.forEach(slide => {
-                        slide.setAttribute('style', 'height: ' + container.offsetWidth * (9 / 16) + 'px;');
+                        slide.setAttribute('style', 'height: ' + height + 'px;');
                     });
+                    let slide = slides[current];
+                    if (!slide) {
+                        return;
+                    }
+                    // Cover the slide. The edit bar sits above it, so the overlay cannot start at the container top.
+                    overlay.style.top = slide.offsetTop + 'px';
+                    overlay.style.left = slide.offsetLeft + 'px';
+                    overlay.style.width = slide.offsetWidth + 'px';
+                    overlay.style.height = slide.offsetHeight + 'px';
                 }
 
                 /**
@@ -172,6 +183,7 @@ define([
                         slides[current - 1].classList.remove('hidden');
                         current--;
                         updateCurrentSlide();
+                        ensureSlideSize(slides[current]);
                     }
                 }
 
@@ -184,22 +196,144 @@ define([
                         slides[current + 1].classList.remove('hidden');
                         current++;
                         updateCurrentSlide();
+                        ensureSlideSize(slides[current]);
                     }
                 }
 
                 /**
-                 * Navigate to the edit page for the current slide.
+                 * Attribute that stores the fitted size for the current display mode.
+                 *
+                 * @returns {string}
                  */
-                function editSlide() {
-                    let slideid = slides[current].getAttribute('data-slideid');
-                    window.location.href = Config.wwwroot + '/mod/slideshow/edit.php?cm=' + options.cmid + '&id=' + slideid;
+                function fontSizeAttribute() {
+                    if (isFullscreenActive()) {
+                        return 'data-fontsize-fullscreen';
+                    }
+                    return 'data-fontsize';
                 }
 
-                // Set width and height for the QR Code container
-                overlay.setAttribute(
-                    'style',
-                    'width: ' + container.offsetWidth + 'px; height: ' + container.offsetWidth * (9 / 16) + 'px;'
-                );
+                /**
+                 * True when the visible slide body still has a scrollbar.
+                 *
+                 * @param {HTMLElement} slide
+                 * @returns {boolean}
+                 */
+                function slideHasScrollbar(slide) {
+                    let nodes = slide.querySelectorAll('.slide-body, .no-overflow');
+                    for (let i = 0; i < nodes.length; i++) {
+                        let el = nodes[i];
+                        if (el.scrollHeight > el.clientHeight + 2) {
+                            return true;
+                        }
+                        if (el.scrollWidth > el.clientWidth + 2) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                /**
+                 * Apply a font size percentage and optionally remember it on the current slide.
+                 *
+                 * @param {number} size
+                 * @param {boolean} remember
+                 * @returns {number} The size after clamping to the slider range.
+                 */
+                function applyFontSize(size, remember) {
+                    let min = Number(fontsize.min);
+                    let max = Number(fontsize.max);
+                    let next = size;
+                    if (next < min) {
+                        next = min;
+                    }
+                    if (next > max) {
+                        next = max;
+                    }
+                    fontsize.value = String(next);
+                    container.style.setProperty('font-size', next + '%');
+
+                    let images = slides[current].querySelectorAll('img');
+                    let scale = next / 100;
+                    images.forEach(img => {
+                        if (!img.naturalWidth) {
+                            return;
+                        }
+                        img.style.width = (img.naturalWidth * scale) + 'px';
+                    });
+                    if (remember) {
+                        slides[current].setAttribute(fontSizeAttribute(), String(next));
+                    }
+                    return next;
+                }
+
+                /**
+                 * Move the slider by one step and keep the new size on this slide.
+                 *
+                 * @param {number} direction 1 to enlarge, -1 to reduce.
+                 */
+                function stepFontSize(direction) {
+                    let step = Number(fontsize.step);
+                    applyFontSize(Number(fontsize.value) + (direction * step), true);
+                }
+
+                /**
+                 * Use the remembered size, or shrink from the default until the scrollbar is gone.
+                 *
+                 * @param {HTMLElement} slide
+                 */
+                function ensureSlideSize(slide) {
+                    let attr = fontSizeAttribute();
+                    let stored = slide.getAttribute(attr);
+                    if (stored !== null) {
+                        applyFontSize(Number(stored), false);
+                        return;
+                    }
+                    let size = fontSizeDefault;
+                    if (isFullscreenActive()) {
+                        size = Number(fontsize.max);
+                    }
+                    size = applyFontSize(size, false);
+                    let step = Number(fontsize.step);
+                    let min = Number(fontsize.min);
+                    while (size - step >= min && slideHasScrollbar(slide)) {
+                        size = applyFontSize(size - step, false);
+                    }
+                    slide.setAttribute(attr, String(size));
+                }
+
+                /**
+                 * Show or hide the size slider beside the A buttons.
+                 *
+                 * @param {boolean} open
+                 */
+                function setFontSizePanel(open) {
+                    if (open) {
+                        fontsizepanel.removeAttribute('hidden');
+                        fontsizetoggle.setAttribute('aria-expanded', 'true');
+                        fontsize.focus();
+                    } else {
+                        fontsizepanel.setAttribute('hidden', 'hidden');
+                        fontsizetoggle.setAttribute('aria-expanded', 'false');
+                    }
+                }
+
+                /**
+                 * Replace the visible slide after a modal save and fit it again.
+                 *
+                 * @param {String} html Player markup for the saved slide
+                 */
+                function replaceCurrentSlide(html) {
+                    let holder = document.createElement('template');
+                    holder.innerHTML = html.trim();
+                    let fresh = holder.content.firstElementChild;
+                    if (!fresh) {
+                        return;
+                    }
+                    slides[current].replaceWith(fresh);
+                    slides = container.querySelectorAll(Selectors.slides);
+                    updateSlideDimensions();
+                    ensureSlideSize(slides[current]);
+                }
 
                 // Hide overlay on click
                 overlay.addEventListener('click', () => {
@@ -244,13 +378,11 @@ define([
                 document.addEventListener('fullscreenchange', () => {
                     if (isFullscreenActive()) {
                         container.classList.add('fullscreen');
-                        fontsize.value = '300';
                     } else {
                         container.classList.remove('fullscreen');
-                        fontsize.value = '150';
                     }
-                    fontsize.dispatchEvent(new Event('input', {bubbles: true}));
                     updateSlideDimensions();
+                    ensureSlideSize(slides[current]);
                 });
 
                 // Previous slide button
@@ -272,22 +404,96 @@ define([
                     }
                 });
 
-                // Font size slider: set base font-size on container so all slide content
-                // scales together while preserving relative sizes (h1, h2, h3, p, etc.).
+                // Font size scales the slide. The first visit shrinks until the body has no scrollbar.
                 fontsize.addEventListener('input', function() {
-                    container.style.setProperty('font-size', this.value + '%');
-
-                    let images = slides[current].querySelectorAll('img');
-                    let scale = this.value / 100;
-                    images.forEach(img => {
-                        img.style.width = (img.naturalWidth * scale) + 'px';
-                    });
+                    applyFontSize(Number(this.value), true);
                 });
 
-                // Edit slide button (only in DOM for users with mod/slideshow:viewslides).
-                if (editslide) {
+                fontsizetoggle.addEventListener('click', () => {
+                    setFontSizePanel(fontsizepanel.hasAttribute('hidden'));
+                });
+
+                container.querySelector('.fontsize-minus').addEventListener('click', () => {
+                    stepFontSize(-1);
+                });
+                container.querySelector('.fontsize-plus').addEventListener('click', () => {
+                    stepFontSize(1);
+                });
+
+                /**
+                 * True while the size slider is open.
+                 *
+                 * @returns {boolean}
+                 */
+                function fontSizePanelOpen() {
+                    return !fontsizepanel.hasAttribute('hidden');
+                }
+
+                // Capture phase so the open slider gets the keys before the page scrolls.
+                document.addEventListener('keydown', (e) => {
+                    if (!fontSizePanelOpen()) {
+                        return;
+                    }
+                    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+                        return;
+                    }
+                    let active = document.activeElement;
+                    if (active && !fontsizecontrol.contains(active)) {
+                        let tag = active.tagName;
+                        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active.isContentEditable) {
+                            return;
+                        }
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.key === 'ArrowUp') {
+                        stepFontSize(1);
+                    } else {
+                        stepFontSize(-1);
+                    }
+                }, true);
+
+                let wheelBudget = 0;
+                fontsizecontrol.addEventListener('wheel', (e) => {
+                    if (!fontSizePanelOpen()) {
+                        return;
+                    }
+                    e.preventDefault();
+                    let delta = e.deltaY;
+                    if (e.deltaMode === 1) {
+                        delta = delta * 40;
+                    } else if (e.deltaMode === 2) {
+                        delta = delta * 800;
+                    }
+                    wheelBudget += delta;
+                    if (Math.abs(wheelBudget) < 40) {
+                        return;
+                    }
+                    if (wheelBudget > 0) {
+                        stepFontSize(-1);
+                    } else {
+                        stepFontSize(1);
+                    }
+                    wheelBudget = 0;
+                }, {passive: false, capture: true});
+
+                document.addEventListener('click', (e) => {
+                    if (!fontsizecontrol.contains(e.target)) {
+                        setFontSizePanel(false);
+                    }
+                });
+
+                // Cog (only in the DOM for users with mod/slideshow:viewslides).
+                if (editslide && options.contextid) {
                     editslide.addEventListener('click', () => {
-                        editSlide();
+                        require(['mod_slideshow/quickedit'], (Quickedit) => {
+                            Quickedit.open({
+                                cmid: options.cmid,
+                                contextid: options.contextid,
+                                slideid: Number(slides[current].getAttribute('data-slideid')),
+                                onSaved: replaceCurrentSlide,
+                            });
+                        });
                     });
                 }
 
@@ -296,9 +502,10 @@ define([
                     updateSlideDimensions();
                 }, true);
 
-                // Set initial slide dimensions and counter
+                // Set initial slide dimensions and counter, then fit the first slide.
                 updateSlideDimensions();
                 updateCurrentSlide();
+                ensureSlideSize(slides[current]);
             });
         }
     };

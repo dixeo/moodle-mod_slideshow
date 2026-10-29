@@ -78,6 +78,120 @@ function slideshow_get_editor_options($context) {
 }
 
 /**
+ * File manager options for the single slide image.
+ *
+ * @return array
+ */
+function slideshow_get_image_file_options(): array {
+    global $CFG;
+    return [
+        'subdirs' => 0,
+        'maxbytes' => $CFG->maxbytes,
+        'maxfiles' => 1,
+        'accepted_types' => ['web_image'],
+    ];
+}
+
+/**
+ * Whether submitted slide HTML counts as content.
+ *
+ * Plain text counts, and so does a body that only embeds media. Empty markup does not.
+ *
+ * @param array $data Submitted form values. content_editor may be a string or an editor array.
+ * @return bool
+ */
+function slideshow_slide_content_is_present(array $data): bool {
+    $editor = $data['content_editor'] ?? '';
+    $raw = is_array($editor) ? (string) ($editor['text'] ?? '') : (string) $editor;
+    $raw = trim($raw);
+    if ($raw === '') {
+        return false;
+    }
+    if (trim(strip_tags($raw)) !== '') {
+        return true;
+    }
+    return (bool) preg_match('/<(img|video|audio|iframe|object|embed)\b/i', $raw);
+}
+
+/**
+ * Server-side checks for the slide edit form.
+ *
+ * Content is required for every layout except title only. Unknown layouts are rejected.
+ *
+ * @param array $data Submitted form values.
+ * @return array Field name => error message. Empty when the submission is valid.
+ */
+function slideshow_validate_slide_submission(array $data): array {
+    $errors = [];
+    $layout = $data['layout'] ?? '';
+    if (!is_string($layout) || !isset(slideshow_get_layouts()[$layout])) {
+        $errors['layoutgroup'] = get_string('layoutinvalid', 'slideshow');
+    }
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY && !slideshow_slide_content_is_present($data)) {
+        $errors['content_editor'] = get_string('contentrequired', 'slideshow');
+    }
+    return $errors;
+}
+
+/**
+ * Whether an existing slide opens in the Dixeo editor.
+ *
+ * local_dixeo_editor depends on local_dixeo. A missing editor plugin, a missing
+ * settings class, or Dixeo off for this module keeps the Moodle slide form.
+ *
+ * @param context $context Module context.
+ * @return bool
+ */
+function slideshow_use_dixeo_editor(context $context): bool {
+    if (!\core_plugin_manager::instance()->get_plugin_info('local_dixeo_editor')) {
+        return false;
+    }
+    if (!class_exists(\local_dixeo\external\service_factory::class)) {
+        return false;
+    }
+    return \local_dixeo\external\service_factory::get_settings_config()->enabled_for($context);
+}
+
+/**
+ * Whether the player modal edits slide HTML with the Moodle editor.
+ *
+ * The Dixeo editor replaces that field when it is installed, enabled for this
+ * module, and the user is allowed to use it.
+ *
+ * @param context $context Module context.
+ * @return bool
+ */
+function slideshow_quick_edit_uses_moodle_editor(context $context): bool {
+    if (!slideshow_use_dixeo_editor($context)) {
+        return true;
+    }
+    if (!class_exists(\local_dixeo_editor\local\editor_capability::class)) {
+        return true;
+    }
+    return !\local_dixeo_editor\local\editor_capability::can_edit_module($context);
+}
+
+/**
+ * Take the required-field note out of a rendered form.
+ *
+ * The player modal appends the Dixeo editor after the form. The note is then
+ * placed after that editor, which is where it sits when the Moodle editor is
+ * the last field inside the form.
+ *
+ * @param string $html Rendered form markup.
+ * @return string The note markup, or an empty string when the form has none.
+ */
+function slideshow_extract_required_note(string &$html): string {
+    $note = '';
+    $pattern = '#<div class="fdescription required" aria-hidden="true">.*?</div>#s';
+    if (preg_match($pattern, $html, $matches)) {
+        $note = $matches[0];
+        $html = str_replace($matches[0], '', $html);
+    }
+    return $note;
+}
+
+/**
  * Sanitize slide HTML for storage (defense in depth; same policy as display cleaning).
  *
  * @param string $content Raw slide HTML.
@@ -114,7 +228,7 @@ function slideshow_user_can_view_slide_files(?stdClass $slide, \context $context
  *
  * Only whitelisted columns are copied; the owning slideshow id is always taken from the course module.
  *
- * @param stdClass $fromform Form data with name, hidden, and id when updating.
+ * @param stdClass $fromform Form data with name, layout, hidetitle, hidden, and id when updating.
  * @param int $slideshowid Owning slideshow instance id ($cm->instance).
  * @param bool $isnewslide True when creating a new slide.
  * @param int $sortorder Sort order for new slides only.
@@ -128,6 +242,13 @@ function slideshow_prepare_slide_save_record(
 ): stdClass {
     $record = new stdClass();
     $record->name = $fromform->name;
+    $record->layout = slideshow_normalize_layout($fromform->layout ?? null);
+    // Title only always shows the title, so it does not keep a hide flag.
+    if ($record->layout === MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $record->hidetitle = 0;
+    } else {
+        $record->hidetitle = empty($fromform->hidetitle) ? 0 : 1;
+    }
     $record->hidden = (int) $fromform->hidden;
     $record->slideshow = $slideshowid;
     $record->timemodified = time();
@@ -143,8 +264,551 @@ function slideshow_prepare_slide_save_record(
     return $record;
 }
 
+/** @var string Slide shows a centered title and no body or image. */
+define('MOD_SLIDESHOW_LAYOUT_TITLEONLY', 'titleonly');
+
+/** @var string Slide image fills the background, with the title and body on top. No image keeps the light slide. */
+define('MOD_SLIDESHOW_LAYOUT_BACKGROUND', 'background');
+
+/** @var string Title on top, image on the left, text on the right. */
+define('MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT', 'contentright');
+
+/** @var string Title on top, text on the left, image on the right. */
+define('MOD_SLIDESHOW_LAYOUT_CONTENTLEFT', 'contentleft');
+
+/** @var string Title on top, text above the image. */
+define('MOD_SLIDESHOW_LAYOUT_CONTENTTOP', 'contenttop');
+
+/** @var string Title on top, text below the image. */
+define('MOD_SLIDESHOW_LAYOUT_CONTENTBOTTOM', 'contentbottom');
+
 /** @var int Default max length for slide titles on the slides management list. */
 define('MOD_SLIDESHOW_SLIDE_LIST_LABEL_MAX', 80);
+
+/**
+ * Layout values the edit form and the player accept.
+ *
+ * @return array<string, string> Layout value => language string key in mod_slideshow.
+ */
+function slideshow_get_layouts(): array {
+    return [
+        MOD_SLIDESHOW_LAYOUT_TITLEONLY => 'layout_titleonly',
+        MOD_SLIDESHOW_LAYOUT_BACKGROUND => 'layout_background',
+        MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT => 'layout_contentright',
+        MOD_SLIDESHOW_LAYOUT_CONTENTLEFT => 'layout_contentleft',
+        MOD_SLIDESHOW_LAYOUT_CONTENTTOP => 'layout_contenttop',
+        MOD_SLIDESHOW_LAYOUT_CONTENTBOTTOM => 'layout_contentbottom',
+    ];
+}
+
+/**
+ * Whether the layout places the image beside or above the text.
+ *
+ * @param string $layout Normalized layout.
+ * @return bool
+ */
+function slideshow_layout_is_split(string $layout): bool {
+    return $layout === MOD_SLIDESHOW_LAYOUT_CONTENTLEFT
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTRIGHT
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTTOP
+        || $layout === MOD_SLIDESHOW_LAYOUT_CONTENTBOTTOM;
+}
+
+/**
+ * Whether the layout paints the slide image.
+ *
+ * Title only never does. The other layouts do when a file is stored.
+ *
+ * @param string $layout Normalized layout.
+ * @return bool
+ */
+function slideshow_layout_shows_image(string $layout): bool {
+    return $layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND || slideshow_layout_is_split($layout);
+}
+
+/**
+ * Whether the player shows this slide's title.
+ *
+ * The title is required on every slide. Title only always shows it. Every
+ * other layout hides it when the slide is marked to.
+ *
+ * @param stdClass $slide Slide row with layout and optional hidetitle.
+ * @return bool
+ */
+function slideshow_slide_shows_title(stdClass $slide): bool {
+    $layout = slideshow_normalize_layout($slide->layout ?? null);
+    if ($layout === MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        return true;
+    }
+    return empty($slide->hidetitle);
+}
+
+/**
+ * Return a known layout, or background when the value is missing or unknown.
+ *
+ * An empty image on that background keeps the title and body on the light slide,
+ * which is how slides created before layouts, and slides created without one, are shown.
+ *
+ * @param string|null $layout Stored or submitted layout.
+ * @return string One of the MOD_SLIDESHOW_LAYOUT_* values.
+ */
+function slideshow_normalize_layout(?string $layout): string {
+    $layouts = slideshow_get_layouts();
+    $layout = (string) $layout;
+    if (isset($layouts[$layout])) {
+        return $layout;
+    }
+    return MOD_SLIDESHOW_LAYOUT_BACKGROUND;
+}
+
+/**
+ * Pluginfile URL for the slide image, when one file is stored.
+ *
+ * @param \context $context Module context.
+ * @param int $slideid Slide id, used as the file itemid.
+ * @param bool $thumbnail True to request Moodle's cached thumb preview instead of the original file.
+ * @return string|null URL, or null when the slide has no image.
+ */
+function slideshow_get_slide_image_url(\context $context, int $slideid, bool $thumbnail = false): ?string {
+    $file = slideshow_get_slide_image_file($context, $slideid);
+    if ($file === null) {
+        return null;
+    }
+    $url = moodle_url::make_pluginfile_url(
+        $context->id,
+        'mod_slideshow',
+        'image',
+        $slideid,
+        $file->get_filepath(),
+        $file->get_filename()
+    );
+    if ($thumbnail) {
+        return $url->out(false, ['preview' => 'thumb']);
+    }
+    return $url->out(false);
+}
+
+/**
+ * Stored featured image for a slide, when one file exists.
+ *
+ * @param \context $context Module context.
+ * @param int $slideid Slide id, used as the file itemid.
+ * @return \stored_file|null
+ */
+function slideshow_get_slide_image_file(\context $context, int $slideid): ?\stored_file {
+    $fs = get_file_storage();
+    $files = $fs->get_area_files(
+        $context->id,
+        'mod_slideshow',
+        'image',
+        $slideid,
+        'filename',
+        false
+    );
+    foreach ($files as $file) {
+        if ($file->is_directory()) {
+            continue;
+        }
+        return $file;
+    }
+    return null;
+}
+
+/**
+ * Whether the current user may edit this module's featured images.
+ *
+ * The control is shown only when the image-editor filter is installed and active,
+ * Dixeo is on for the course, and the user has the filter edit capability. The
+ * editor webservice rejects anyone else.
+ *
+ * @param \context $context Module context.
+ * @return bool
+ */
+function slideshow_featured_image_editor_allowed(\context $context): bool {
+    if (!class_exists(\filter_dixeo_imageeditor\adapter\feature_gate::class)) {
+        return false;
+    }
+    if (!\filter_dixeo_imageeditor\adapter\feature_gate::is_globally_enabled()) {
+        return false;
+    }
+    if (!class_exists(\local_dixeo\external\service_factory::class)) {
+        return false;
+    }
+    $coursecontext = $context->get_course_context(false);
+    if (!$coursecontext instanceof \context) {
+        return false;
+    }
+    if (!\local_dixeo\external\service_factory::get_settings_config()->enabled_for($coursecontext)) {
+        return false;
+    }
+    return has_capability('filter/dixeo_imageeditor:edit', $coursecontext);
+}
+
+/**
+ * Whether a content-image job is still running for this featured file.
+ *
+ * @param \stored_file $file Stored featured image.
+ * @return bool
+ */
+function slideshow_featured_image_job_pending(\stored_file $file): bool {
+    if (!class_exists(\local_dixeo\service\image\content\location::class)) {
+        return false;
+    }
+    if (!class_exists(\local_dixeo\repository\image\job_repository::class)) {
+        return false;
+    }
+    $location = \local_dixeo\service\image\content\location::from_stored_file($file);
+    $pending = \local_dixeo\repository\image\job_repository::get_pending_locationhashes([$location->hash()]);
+    return $pending !== [];
+}
+
+/**
+ * Image-editor control for a featured slide file.
+ *
+ * The button sits on the slide, outside the backdrop, and uses the same attributes
+ * the text filter writes onto an img. An empty string means editing is closed.
+ * A pending job sets data-dixeo-pending so the existing poller watches this file.
+ *
+ * @param \context $context Module context.
+ * @param \stored_file $file Stored featured image.
+ * @return string
+ */
+function slideshow_render_featured_image_editor(\context $context, \stored_file $file): string {
+    if (!slideshow_featured_image_editor_allowed($context)) {
+        return '';
+    }
+    $coursecontext = $context->get_course_context(false);
+    $courseid = $coursecontext instanceof \context ? (int) $coursecontext->instanceid : 0;
+    $label = get_string('editimage', 'filter_dixeo_imageeditor');
+    $button = html_writer::tag('button', $label, [
+        'type' => 'button',
+        'class' => 'btn btn-sm dixeo-imageeditor-editbtn',
+        'data-action' => 'open-editor',
+        'aria-label' => $label,
+    ]);
+    $attrs = [
+        'data-dixeo-imageeditor' => '1',
+        'data-slideshow-slide' => '1',
+        'data-contextid' => $file->get_contextid(),
+        'data-component' => $file->get_component(),
+        'data-filearea' => $file->get_filearea(),
+        'data-itemid' => $file->get_itemid(),
+        'data-filepath' => $file->get_filepath(),
+        'data-filename' => $file->get_filename(),
+        'data-courseid' => $courseid,
+        'data-contenthash' => $file->get_contenthash(),
+    ];
+    if (slideshow_featured_image_job_pending($file)) {
+        $attrs['data-dixeo-pending'] = '1';
+    }
+    return html_writer::div($button, 'dixeo-imageeditor-wrap dixeo-slideshow-imageeditor', $attrs);
+}
+
+/**
+ * Player markup for one slide.
+ *
+ * The title is plain text, and it is omitted when the slide hides it. Title only
+ * always includes the title and omits the body and the image. A background
+ * image is a CSS background on an inner element so the player can set the slide
+ * height without removing it. With no image the slide stays on the light background.
+ *
+ * @param stdClass $slide Slide row with name and layout.
+ * @param string $contenthtml Already formatted slide body.
+ * @param string|null $imageurl Slide image URL, or null when no file is stored.
+ * @param bool $hidden True when the slide is not the one shown first.
+ * @param string $editorhtml Image-editor control. A background slide keeps it on the slide; a split layout places it on the image.
+ * @return string
+ */
+function slideshow_render_slide_html(
+    stdClass $slide,
+    string $contenthtml,
+    ?string $imageurl,
+    bool $hidden = false,
+    string $editorhtml = ''
+): string {
+    $layout = slideshow_normalize_layout($slide->layout ?? null);
+    $hasimage = slideshow_layout_shows_image($layout) && $imageurl !== null && $imageurl !== '';
+
+    $classes = 'slide no-overflow layout-' . $layout;
+    if ($layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND && $hasimage) {
+        $classes .= ' has-image';
+    }
+    if ($hidden) {
+        $classes .= ' hidden';
+    }
+
+    $inner = '';
+    if (slideshow_slide_shows_title($slide)) {
+        $inner = html_writer::tag('h2', format_string($slide->name ?? ''), ['class' => 'slide-title']);
+    }
+
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $body = html_writer::div($contenthtml, 'slide-body');
+        if (slideshow_layout_is_split($layout)) {
+            // The editor sits on the image. The media box stays exposed to assistive
+            // technology when that button is inside it.
+            $editorinmedia = $editorhtml !== '';
+            $mediaattrs = [];
+            if ($hasimage) {
+                $mediaattrs['style'] = 'background-image:url("' . $imageurl . '")';
+            }
+            if (!$editorinmedia) {
+                $mediaattrs['aria-hidden'] = 'true';
+            }
+            $media = html_writer::div($editorinmedia ? $editorhtml : '', 'slide-media', $mediaattrs);
+            $inner .= html_writer::div($media . $body, 'slide-split');
+            if ($editorinmedia) {
+                $editorhtml = '';
+            }
+        } else {
+            $inner .= $body;
+        }
+    }
+
+    if ($layout === MOD_SLIDESHOW_LAYOUT_BACKGROUND && $hasimage) {
+        $backdrop = html_writer::div('', 'slide-backdrop', [
+            'style' => 'background-image:url("' . $imageurl . '")',
+            'aria-hidden' => 'true',
+        ]);
+        $inner = $backdrop . html_writer::div($inner, 'slide-layout');
+    } else {
+        $inner = html_writer::div($inner, 'slide-layout');
+    }
+
+    return html_writer::div($inner . $editorhtml, $classes, [
+        'data-slideid' => (int) ($slide->id ?? 0),
+        'data-layout' => $layout,
+    ]);
+}
+
+/**
+ * Player markup for one slide, including formatted body text and the slide image.
+ *
+ * @param stdClass $slide Slide row.
+ * @param \context $context Module context.
+ * @param bool $hidden True when this slide is not the one shown first.
+ * @return string
+ */
+function slideshow_render_player_slide(stdClass $slide, \context $context, bool $hidden = false): string {
+    $layout = slideshow_normalize_layout($slide->layout ?? null);
+    $content = '';
+    $imageurl = null;
+    $editorhtml = '';
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $content = file_rewrite_pluginfile_urls(
+            (string) ($slide->content ?? ''),
+            'pluginfile.php',
+            $context->id,
+            'mod_slideshow',
+            'content',
+            (int) $slide->id
+        );
+        $formatoptions = new stdClass();
+        $formatoptions->overflowdiv = true;
+        $formatoptions->context = $context;
+        $content = format_text($content, (int) ($slide->contentformat ?? FORMAT_HTML), $formatoptions);
+        $content = slideshow_balance_slide_html($content, (int) $slide->id);
+    }
+    if (slideshow_layout_shows_image($layout)) {
+        $file = slideshow_get_slide_image_file($context, (int) $slide->id);
+        if ($file !== null) {
+            $imageurl = moodle_url::make_pluginfile_url(
+                $context->id,
+                'mod_slideshow',
+                'image',
+                (int) $slide->id,
+                $file->get_filepath(),
+                $file->get_filename()
+            )->out(false);
+            $editorhtml = slideshow_render_featured_image_editor($context, $file);
+        }
+    }
+    return slideshow_render_slide_html($slide, $content, $imageurl, $hidden, $editorhtml);
+}
+
+/**
+ * Save the title, layout, and image of an existing slide.
+ *
+ * Title only does not replace the stored body or image. Any other layout stores
+ * the Moodle editor draft when content_editor is submitted.
+ *
+ * @param stdClass $slide Existing slideshow_slide row that belongs to this module.
+ * @param \context $context Module context.
+ * @param stdClass $data Submitted name, layout, image draft item id, and optional content_editor.
+ * @return array{errors: array<string, string>, html?: string} Field errors, or rendered slide HTML when saved.
+ */
+function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass $data): array {
+    global $DB;
+
+    require_capability('mod/slideshow:viewslides', $context);
+
+    $errors = [];
+    $name = trim((string) ($data->name ?? ''));
+    if ($name === '') {
+        $errors['name'] = get_string('required');
+    } else if (\core_text::strlen($name) > 255) {
+        $errors['name'] = get_string('maximumchars', '', 255);
+    }
+
+    $layout = $data->layout ?? '';
+    if (!is_string($layout) || !isset(slideshow_get_layouts()[$layout])) {
+        $errors['layoutgroup'] = get_string('layoutinvalid', 'slideshow');
+    }
+    $editor = null;
+    $usedixeo = !empty($data->dixeo);
+    if ($errors === [] && $layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        if ($usedixeo) {
+            $editor = [
+                'text' => (string) ($data->dixeo_text ?? ''),
+                'format' => (int) ($data->dixeo_format ?? FORMAT_HTML),
+                'itemid' => (int) ($data->dixeo_itemid ?? 0),
+            ];
+        } else if (!isset($data->content_editor) || !is_array($data->content_editor)) {
+            $errors['content_editor'] = get_string('contentrequired', 'slideshow');
+        } else {
+            $editor = $data->content_editor;
+        }
+        if ($editor !== null) {
+            $contenterrors = slideshow_validate_slide_submission([
+                'layout' => $layout,
+                'content_editor' => $editor,
+            ]);
+            unset($contenterrors['layoutgroup']);
+            $errors = array_merge($errors, $contenterrors);
+        }
+    }
+    if ($errors !== []) {
+        return ['errors' => $errors];
+    }
+
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY && $usedixeo) {
+        slideshow_save_dixeo_slide_content($slide, $context, $data);
+    }
+
+    $data->name = $name;
+    $data->id = (int) $slide->id;
+    $data->hidden = (int) $slide->hidden;
+    $record = slideshow_prepare_slide_save_record($data, (int) $slide->slideshow, false);
+    $DB->update_record('slideshow_slide', $record);
+
+    if ($record->layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        if (!$usedixeo) {
+            $fromform = (object) [
+                'content_editor' => [
+                    'text' => (string) ($editor['text'] ?? ''),
+                    'format' => (int) ($editor['format'] ?? FORMAT_HTML),
+                    'itemid' => (int) ($editor['itemid'] ?? 0),
+                ],
+            ];
+            $editoroptions = slideshow_get_editor_options($context);
+            $fromform = file_postupdate_standard_editor(
+                $fromform,
+                'content',
+                $editoroptions,
+                $context,
+                'mod_slideshow',
+                'content',
+                (int) $slide->id
+            );
+            $fromform->content = slideshow_sanitize_slide_content(
+                (string) $fromform->content,
+                (int) $fromform->contentformat
+            );
+            $DB->set_field('slideshow_slide', 'content', $fromform->content, ['id' => $slide->id]);
+            $DB->set_field('slideshow_slide', 'contentformat', $fromform->contentformat, ['id' => $slide->id]);
+        }
+
+        file_save_draft_area_files(
+            (int) ($data->image ?? 0),
+            $context->id,
+            'mod_slideshow',
+            'image',
+            (int) $slide->id,
+            slideshow_get_image_file_options()
+        );
+    }
+
+    $slideshow = $DB->get_record('slideshow', ['id' => $slide->slideshow], '*', MUST_EXIST);
+    $updated = $DB->get_record('slideshow_slide', ['id' => $slide->id], '*', MUST_EXIST);
+    $event = \mod_slideshow\event\slide_updated::create_from_slide($slideshow, $context, $updated);
+    $event->trigger();
+
+    return [
+        'errors' => [],
+        'html' => slideshow_render_player_slide($updated, $context, false),
+        'name' => slideshow_get_slide_list_name($updated),
+        'preview' => slideshow_get_slide_list_preview_html($updated, $context),
+    ];
+}
+
+/**
+ * Store slide HTML from the embedded Dixeo editor, including its draft files.
+ *
+ * Called before the title and layout update. The adapter rewrites the slide row
+ * from the record it loaded, so name and layout are written after this returns.
+ *
+ * @param stdClass $slide Existing slideshow_slide row.
+ * @param \context $context Module context.
+ * @param stdClass $data Dixeo editor text, format, draft item id, and session id.
+ */
+function slideshow_save_dixeo_slide_content(stdClass $slide, \context $context, stdClass $data): void {
+    global $CFG, $DB;
+
+    if (!class_exists(\local_dixeo_editor\activity\activity_adapter_factory::class)) {
+        throw new \moodle_exception('invalidaccessparameter');
+    }
+
+    require_once($CFG->dirroot . '/mod/page/locallib.php');
+
+    $cm = get_coursemodule_from_instance('slideshow', $slide->slideshow, 0, false, MUST_EXIST);
+    $factory = new \local_dixeo_editor\activity\activity_adapter_factory($DB);
+    $adapter = $factory->create((int) $cm->id, (int) $slide->id);
+    $sessionid = (int) ($data->editorsessionid ?? 0);
+    $adapter->save_content(
+        (string) ($data->dixeo_text ?? ''),
+        (int) ($data->dixeo_format ?? FORMAT_HTML),
+        (int) ($data->dixeo_itemid ?? 0),
+        page_get_editor_options($context),
+        $sessionid > 0 ? $sessionid : null
+    );
+}
+
+/**
+ * Miniature of one slide for the slides management list.
+ *
+ * Uses the player markup, scaled by CSS. An image is the cached thumb preview, not the original file.
+ *
+ * @param stdClass $slide Slide row.
+ * @param \context $context Module context.
+ * @return string
+ */
+function slideshow_get_slide_list_preview_html(stdClass $slide, \context $context): string {
+    $layout = slideshow_normalize_layout($slide->layout ?? null);
+    $content = '';
+    $imageurl = null;
+    if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
+        $content = file_rewrite_pluginfile_urls(
+            (string) ($slide->content ?? ''),
+            'pluginfile.php',
+            $context->id,
+            'mod_slideshow',
+            'content',
+            (int) $slide->id
+        );
+        $formatoptions = new stdClass();
+        $formatoptions->overflowdiv = false;
+        $formatoptions->context = $context;
+        $content = format_text($content, (int) ($slide->contentformat ?? FORMAT_HTML), $formatoptions);
+        $content = slideshow_balance_slide_html($content, (int) $slide->id);
+    }
+    if (slideshow_layout_shows_image($layout)) {
+        $imageurl = slideshow_get_slide_image_url($context, (int) $slide->id, true);
+    }
+
+    $slidehtml = slideshow_render_slide_html($slide, $content, $imageurl, false);
+    $scaled = html_writer::div($slidehtml, 'slideshow-container slide-list-thumb-scale');
+    return html_writer::div($scaled, 'slide-list-thumb', ['aria-hidden' => 'true']);
+}
 
 /**
  * Label for one slide on the slides management list (slides.php).

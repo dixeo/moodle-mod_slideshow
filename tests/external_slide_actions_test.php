@@ -28,6 +28,7 @@ namespace mod_slideshow;
 use core_external\external_api;
 use mod_slideshow\external\delete_slide;
 use mod_slideshow\external\reorder_slide;
+use mod_slideshow\external\save_slide;
 use mod_slideshow\external\set_slide_visibility;
 
 /**
@@ -162,5 +163,59 @@ final class external_slide_actions_test extends \advanced_testcase {
         $this->assertTrue($result['result']);
         $this->assertEquals(1, (int) $DB->get_field('slideshow_slide', 'sortorder', ['id' => $firstid]));
         $this->assertEquals(0, (int) $DB->get_field('slideshow_slide', 'sortorder', ['id' => $secondid]));
+    }
+
+    /**
+     * An editing teacher can rename a slide through the external service.
+     *
+     * @covers \mod_slideshow\external\save_slide::execute
+     */
+    public function test_teacher_can_save_slide(): void {
+        global $DB;
+        [$slideshow, , $slideid] = $this->create_slide_for_teacher();
+        $cm = get_coursemodule_from_instance('slideshow', $slideshow->id);
+
+        $result = save_slide::execute(
+            (int) $cm->id,
+            $slideid,
+            'Renamed',
+            MOD_SLIDESHOW_LAYOUT_BACKGROUND,
+            0,
+            true,
+            '<p>Body</p>',
+            FORMAT_HTML,
+            0
+        );
+        $result = external_api::clean_returnvalue(save_slide::execute_returns(), $result);
+
+        $this->assertSame([], $result['errors']);
+        $this->assertStringContainsString('Renamed', $result['html']);
+        $this->assertEquals('Renamed', $DB->get_field('slideshow_slide', 'name', ['id' => $slideid]));
+    }
+
+    /**
+     * A student cannot save a slide.
+     *
+     * @covers \mod_slideshow\external\save_slide::execute
+     */
+    public function test_student_cannot_save_slide(): void {
+        $course = $this->getDataGenerator()->create_course();
+        $slideshow = $this->getDataGenerator()->create_module('slideshow', ['course' => $course->id]);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $generator = $this->getDataGenerator()->get_plugin_generator('mod_slideshow');
+        $slideid = $generator->create_slide((object) [
+            'slideshow' => $slideshow->id,
+            'name' => 'Slide A',
+            'content' => '',
+            'contentformat' => FORMAT_HTML,
+            'hidden' => 0,
+            'sortorder' => 0,
+            'timemodified' => time(),
+        ]);
+        $cm = get_coursemodule_from_instance('slideshow', $slideshow->id);
+        $this->setUser($student);
+
+        $this->expectException(\required_capability_exception::class);
+        save_slide::execute((int) $cm->id, $slideid, 'Renamed', MOD_SLIDESHOW_LAYOUT_BACKGROUND, 0);
     }
 }

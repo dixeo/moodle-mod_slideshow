@@ -22,12 +22,12 @@
     @copyright 2026 Dixeo
 
     Classes required for JS:
-    * slide, prev, next, currentslide, fontsize, overlay, scantoenrol, qrcode, fullscreen, editslide
+    * slide, prev, next, currentslide, fontsize, overlay, scantoenrol, qrcode, fullscreen, slideshow-edit-cog
 
     Context variables required for this template:
     * cmid
     * hasslides
-    * slides
+    * slides (each item is rendered slide markup in html)
     * slidecount
     * singleslide
     * watermarkurl
@@ -36,15 +36,13 @@
     * addslideurl
     * previcon
     * nexticon
-    * decreaseicon
-    * increaseicon
     * fullscreenicon
 
     Example context (json):
     {
         "cmid": 1,
         "hasslides": true,
-        "slides": [{"id": 10, "content": "<p>Hello</p>", "first": true}],
+        "slides": [{"html": "<div class=\"slide no-overflow\" data-slideid=\"10\"><p>Hello</p></div>"}],
         "slidecount": 1,
         "singleslide": true,
         "watermarkurl": "https://example.com/theme/image.php/boost/slideshow/1/dixeo",
@@ -53,20 +51,25 @@
         "addslideurl": "https://example.com/mod/slideshow/edit.php?cm=1",
         "previcon": "<i class=\"icon fa fa-chevron-left\"></i>",
         "nexticon": "<i class=\"icon fa fa-chevron-right\"></i>",
-        "decreaseicon": "<i class=\"icon fa fa-font decrease\"></i>",
-        "increaseicon": "<i class=\"icon fa fa-font increase\"></i>",
         "fullscreenicon": "<i class=\"icon fa fa-expand\"></i>"
     }
 }}
 {{#hasslides}}
-<div id="slideshow-{{cmid}}" class="box py-3 slideshow-container generalbox center clearfix">
+<div id="slideshow-{{cmid}}" class="box py-3 slideshow-container generalbox center clearfix{{#caneditslides}} has-edit-bar{{/caneditslides}}">
     <div class="overlay hidden">
         <div class="scantoenrol">{{#str}}scantoenrol, slideshow{{/str}}</div>
     </div>
-    {{#slides}}
-        <div class="slide no-overflow{{^first}} hidden{{/first}}" data-slideid="{{id}}">
-            {{{content}}}
+    {{#caneditslides}}
+        <div class="slideshow-edit-bar">
+            <div class="controls">
+                <button type="button" class="slideshow-edit-cog" aria-label="{{#str}}edit, slideshow{{/str}}">
+                    {{#pix}}i/settings, core{{/pix}}
+                </button>
+            </div>
         </div>
+    {{/caneditslides}}
+    {{#slides}}
+        {{{html}}}
     {{/slides}}
     <div class="watermark">
         <img class="watermark" src="{{watermarkurl}}" alt="{{#str}}watermark, slideshow{{/str}}">
@@ -74,12 +77,9 @@
     <div class="slidecontrols">{{!
     }}<span class="navbuttons"><span class="prev disabled">{{{previcon}}}</span><span class="next{{#singleslide}} disabled{{/singleslide}}">{{{nexticon}}}</span></span>{{!
     }}<span class="currentslide">1/{{slidecount}}</span>{{!
-    }}<div class="controls">{{{decreaseicon}}}<input id="fontsize-slider" class="fontsize" type="range" min="10" max="500" step="5" value="125">{{{increaseicon}}}{{#showqr}}<span class="qrcode"><i class="icon fa fa-solid fa-qrcode fa-fw" title="{{#str}}qrcode, slideshow{{/str}}" role="img" aria-label="{{#str}}qrcode, slideshow{{/str}}"></i></span>{{/showqr}}<button class="fullscreen" tabindex="0" aria-label="{{#str}}fullscreen, slideshow{{/str}}">{{{fullscreenicon}}}</button></div>{{!
+    }}<div class="controls"><div class="fontsize-control"><div class="fontsize-panel" hidden><button type="button" class="fontsize-step fontsize-minus" aria-label="{{#str}}decrease, slideshow{{/str}}">−</button><input id="fontsize-slider" class="fontsize" type="range" min="70" max="180" step="10" value="100" aria-label="{{#str}}textsize, slideshow{{/str}}"><button type="button" class="fontsize-step fontsize-plus" aria-label="{{#str}}increase, slideshow{{/str}}">+</button></div><button type="button" class="fontsize-toggle" aria-expanded="false" aria-controls="fontsize-slider" aria-label="{{#str}}textsize, slideshow{{/str}}"><span class="fontsize-a fontsize-a-small" aria-hidden="true">A</span><span class="fontsize-a fontsize-a-large" aria-hidden="true">A</span></button></div>{{#showqr}}<span class="qrcode"><i class="icon fa fa-solid fa-qrcode fa-fw" title="{{#str}}qrcode, slideshow{{/str}}" role="img" aria-label="{{#str}}qrcode, slideshow{{/str}}"></i></span>{{/showqr}}<button class="fullscreen" tabindex="0" aria-label="{{#str}}fullscreen, slideshow{{/str}}">{{{fullscreenicon}}}</button></div>{{!
     }}</div>
 </div>
-{{#caneditslides}}
-    <a href="#" class="editslide btn btn-secondary float-right">{{#str}}edit, slideshow{{/str}}</a>
-{{/caneditslides}}
 {{/hasslides}}
 {{^hasslides}}
 <div class="box py-3 generalbox slideshow-empty clearfix">

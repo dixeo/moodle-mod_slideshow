@@ -63,6 +63,9 @@ $slides = $DB->get_records('slideshow_slide', ['slideshow' => $cm->instance, 'hi
 
 if ($slides) {
     $jsparams = ['cmid' => $cm->id];
+    if (has_capability('mod/slideshow:viewslides', $context)) {
+        $jsparams['contextid'] = $context->id;
+    }
 
     // Get sharecourse link.
     if (class_exists('\local_sharecourse\sharecourse_helper')) {
@@ -77,23 +80,8 @@ if ($slides) {
 $slidedata = [];
 $firstslide = true;
 foreach ($slides as $slide) {
-    $content = file_rewrite_pluginfile_urls(
-        $slide->content,
-        'pluginfile.php',
-        $context->id,
-        'mod_slideshow',
-        'content',
-        $slide->id
-    );
-    $formatoptions = new stdClass();
-    $formatoptions->overflowdiv = true;
-    $formatoptions->context = $context;
-    $content = format_text($content, $slide->contentformat, $formatoptions);
-    $content = slideshow_balance_slide_html($content, (int) $slide->id);
     $slidedata[] = [
-        'id' => $slide->id,
-        'content' => $content,
-        'first' => $firstslide,
+        'html' => slideshow_render_player_slide($slide, $context, !$firstslide),
     ];
     $firstslide = false;
 }
@@ -113,18 +101,6 @@ echo $OUTPUT->render_from_template('mod_slideshow/player', [
     'addslideurl' => (new moodle_url('/mod/slideshow/edit.php', ['cm' => $cm->id]))->out(false),
     'previcon' => $OUTPUT->pix_icon('t/collapsed_rtl', get_string('prev', 'slideshow')),
     'nexticon' => $OUTPUT->pix_icon('t/collapsed', get_string('next', 'slideshow')),
-    'decreaseicon' => $OUTPUT->pix_icon(
-        'e/styleparagraph',
-        get_string('decrease', 'slideshow'),
-        'core',
-        ['class' => 'decrease']
-    ),
-    'increaseicon' => $OUTPUT->pix_icon(
-        'e/styleparagraph',
-        get_string('increase', 'slideshow'),
-        'core',
-        ['class' => 'increase']
-    ),
     'fullscreenicon' => $OUTPUT->pix_icon('e/fullscreen', get_string('fullscreen', 'slideshow')),
 ]);
 echo $OUTPUT->footer();

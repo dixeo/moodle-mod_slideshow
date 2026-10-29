@@ -59,7 +59,7 @@ $PAGE->activityheader->set_attrs([
     'description' => '',
 ]);
 
-$PAGE->requires->js_call_amd('mod_slideshow/slides', 'init', [$cm->id]);
+$PAGE->requires->js_call_amd('mod_slideshow/slides', 'init', [$cm->id, $context->id]);
 
 echo $OUTPUT->header();
 
@@ -77,6 +77,7 @@ foreach ($slides as $slide) {
         'sortorder' => $slide->sortorder,
         'index' => $displayindex,
         'hidden' => $slide->hidden,
+        'preview' => slideshow_get_slide_list_preview_html($slide, $context),
     ];
     $displayindex++;
 }

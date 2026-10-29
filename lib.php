@@ -328,35 +328,36 @@ function slideshow_pluginfile($course, $cm, $context, $filearea, $args, $forcedo
         return false;
     }
 
-    if ($filearea === 'content') {
-        if (count($args) < 2) {
-            send_header_404();
-            die;
-        }
-        $itemid = (int) array_shift($args);
-        $filename = array_pop($args);
-        $filepath = $args ? '/' . implode('/', $args) . '/' : '/';
-
-        require_once("$CFG->dirroot/mod/slideshow/locallib.php");
-        if ($itemid > 0) {
-            $slide = $DB->get_record('slideshow_slide', [
-                'id' => $itemid,
-                'slideshow' => $cm->instance,
-            ], 'id,hidden', IGNORE_MISSING);
-            if (!$slide || !slideshow_user_can_view_slide_files($slide, $context)) {
-                return false;
-            }
-        } else if (!slideshow_user_can_view_slide_files(null, $context)) {
-            return false;
-        }
-
-        $options['immutable'] = true;
-    } else {
+    // Slide body files and the optional slide image use the same itemid and visibility rules.
+    if ($filearea !== 'content' && $filearea !== 'image') {
         return false;
     }
 
+    if (count($args) < 2) {
+        send_header_404();
+        die;
+    }
+    $itemid = (int) array_shift($args);
+    $filename = array_pop($args);
+    $filepath = $args ? '/' . implode('/', $args) . '/' : '/';
+
+    require_once("$CFG->dirroot/mod/slideshow/locallib.php");
+    if ($itemid > 0) {
+        $slide = $DB->get_record('slideshow_slide', [
+            'id' => $itemid,
+            'slideshow' => $cm->instance,
+        ], 'id,hidden', IGNORE_MISSING);
+        if (!$slide || !slideshow_user_can_view_slide_files($slide, $context)) {
+            return false;
+        }
+    } else if (!slideshow_user_can_view_slide_files(null, $context)) {
+        return false;
+    }
+
+    $options['immutable'] = true;
+
     $fs = get_file_storage();
-    $file = $fs->get_file($context->id, 'mod_slideshow', 'content', $itemid, $filepath, $filename);
+    $file = $fs->get_file($context->id, 'mod_slideshow', $filearea, $itemid, $filepath, $filename);
     // Do not fall back to legacy itemid 0 after authorizing a positive slide itemid (SLS-SEC-003).
     if (!$file || $file->is_directory()) {
         return false;
@@ -811,4 +812,91 @@ function slideshow_add_button_to_activity_menu($page) {
     }
 
     return $actions;
+}
+
+/**
+ * Quick-edit form for the slide currently shown in the player.
+ *
+ * @param array $args Fragment arguments with cmid and slideid.
+ * @return string
+ */
+function mod_slideshow_output_fragment_quickedit(array $args): string {
+    global $CFG, $DB;
+
+    require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+    require_once($CFG->libdir . '/formslib.php');
+
+    $cmid = clean_param($args['cmid'] ?? 0, PARAM_INT);
+    $slideid = clean_param($args['slideid'] ?? 0, PARAM_INT);
+    if (!$cmid || !$slideid) {
+        throw new \moodle_exception('invalidaccessparameter');
+    }
+
+    $cm = get_coursemodule_from_id('slideshow', $cmid, 0, false, MUST_EXIST);
+    $context = context_module::instance($cm->id);
+    require_capability('mod/slideshow:viewslides', $context);
+
+    $slide = $DB->get_record('slideshow_slide', [
+        'id' => $slideid,
+        'slideshow' => $cm->instance,
+    ], '*', MUST_EXIST);
+
+    $draftid = 0;
+    file_prepare_draft_area(
+        $draftid,
+        $context->id,
+        'mod_slideshow',
+        'image',
+        (int) $slide->id,
+        slideshow_get_image_file_options()
+    );
+
+    $form = new \mod_slideshow\form\quick_edit_form(null, [
+        'cm' => $cm,
+        'context' => $context,
+        'moodleeditor' => slideshow_quick_edit_uses_moodle_editor($context),
+    ]);
+    $data = (object) [
+        'id' => (int) $slide->id,
+        'cmid' => (int) $cm->id,
+        'name' => $slide->name,
+        'hidetitle' => empty($slide->hidetitle) ? 0 : 1,
+        'layout' => slideshow_normalize_layout($slide->layout ?? null),
+        'image' => $draftid,
+    ];
+    if (slideshow_quick_edit_uses_moodle_editor($context)) {
+        $prepared = file_prepare_standard_editor(
+            $slide,
+            'content',
+            slideshow_get_editor_options($context),
+            $context,
+            'mod_slideshow',
+            'content',
+            (int) $slide->id
+        );
+        $data->content_editor = $prepared->content_editor;
+    }
+    $form->set_data($data);
+
+    $formhtml = $form->render();
+    $requirednote = '';
+    if (!slideshow_quick_edit_uses_moodle_editor($context)) {
+        $requirednote = slideshow_extract_required_note($formhtml);
+    }
+    $html = html_writer::div($formhtml, 'slideshow-quick-edit');
+    if (!slideshow_quick_edit_uses_moodle_editor($context)) {
+        $embedded = \local_dixeo_editor\output\embedded_editor::render($cm, (int) $slide->id, $context);
+        $contentlabel = html_writer::tag('label', get_string('content', 'slideshow'), [
+            'class' => 'slideshow-content-label',
+            'for' => 'id_modulecontent',
+        ]);
+        $html .= html_writer::div($contentlabel . $embedded['html'], 'slideshow-dixeo-editor', [
+            'data-cmid' => (int) $cm->id,
+            'data-slideid' => (int) $slide->id,
+            'data-sessionid' => (int) $embedded['sessionid'],
+        ]);
+        $html .= $requirednote;
+    }
+
+    return $html;
 }
