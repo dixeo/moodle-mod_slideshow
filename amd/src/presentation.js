@@ -142,13 +142,19 @@ define([
                  * Updates the height of the slide container based on the current slide's width (16:9).
                  */
                 function updateSlideDimensions() {
-                    overlay.setAttribute(
-                        'style',
-                        'width: ' + container.offsetWidth + 'px; height: ' + container.offsetWidth * (9 / 16) + 'px;'
-                    );
+                    let height = container.offsetWidth * (9 / 16);
                     slides.forEach(slide => {
-                        slide.setAttribute('style', 'height: ' + container.offsetWidth * (9 / 16) + 'px;');
+                        slide.setAttribute('style', 'height: ' + height + 'px;');
                     });
+                    let slide = slides[current];
+                    if (!slide) {
+                        return;
+                    }
+                    // Cover the slide. The edit bar sits above it, so the overlay cannot start at the container top.
+                    overlay.style.top = slide.offsetTop + 'px';
+                    overlay.style.left = slide.offsetLeft + 'px';
+                    overlay.style.width = slide.offsetWidth + 'px';
+                    overlay.style.height = slide.offsetHeight + 'px';
                 }
 
                 /**
@@ -328,12 +334,6 @@ define([
                     updateSlideDimensions();
                     ensureSlideSize(slides[current]);
                 }
-
-                // Set width and height for the QR Code container
-                overlay.setAttribute(
-                    'style',
-                    'width: ' + container.offsetWidth + 'px; height: ' + container.offsetWidth * (9 / 16) + 'px;'
-                );
 
                 // Hide overlay on click
                 overlay.addEventListener('click', () => {
