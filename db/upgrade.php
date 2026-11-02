@@ -120,5 +120,39 @@ function xmldb_slideshow_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2026102803, 'slideshow');
     }
 
+    if ($oldversion < 2026103000) {
+        // Slides written by other plugins or restored from older backups may hold uncleaned HTML.
+        // Clean every stored body with the same policy as the save paths.
+        upgrade_set_timeout(3600);
+        $slides = $DB->get_recordset('slideshow_slide', null, 'id ASC', 'id, content, contentformat');
+        foreach ($slides as $slide) {
+            $content = (string) $slide->content;
+            if ($content === '') {
+                continue;
+            }
+            $clean = clean_text($content, (int) ($slide->contentformat ?? FORMAT_HTML));
+            if ($clean !== $content) {
+                $DB->set_field('slideshow_slide', 'content', $clean, ['id' => $slide->id]);
+            }
+        }
+        $slides->close();
+
+        // Remove featured images whose slide no longer exists.
+        $fs = get_file_storage();
+        $sql = "SELECT DISTINCT f.contextid, f.itemid
+                  FROM {files} f
+             LEFT JOIN {slideshow_slide} s ON s.id = f.itemid
+                 WHERE f.component = :component
+                   AND f.filearea = :filearea
+                   AND s.id IS NULL";
+        $orphans = $DB->get_recordset_sql($sql, ['component' => 'mod_slideshow', 'filearea' => 'image']);
+        foreach ($orphans as $orphan) {
+            $fs->delete_area_files((int) $orphan->contextid, 'mod_slideshow', 'image', (int) $orphan->itemid);
+        }
+        $orphans->close();
+
+        upgrade_mod_savepoint(true, 2026103000, 'slideshow');
+    }
+
     return true;
 }
