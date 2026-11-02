@@ -116,10 +116,28 @@ function slideshow_add_instance($data, $mform = null) {
     $context = context_module::instance($cmid);
 
     // Insert slides if any (slideshow_slide.slideshow = activity instance id).
+    // Only whitelisted columns are stored and the body is cleaned, like every other save path.
     if (!empty($data->slides) && is_array($data->slides)) {
+        require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+        $sortorder = 0;
         foreach ($data->slides as $slidedata) {
-            $slidedata['slideshow'] = $data->id;
-            $slideid = $DB->insert_record('slideshow_slide', $slidedata);
+            $slidedata = (array) $slidedata;
+            $format = clean_param($slidedata['contentformat'] ?? FORMAT_HTML, PARAM_INT);
+            if (!array_key_exists($format, format_text_menu())) {
+                $format = FORMAT_HTML;
+            }
+            $record = (object) [
+                'slideshow' => $data->id,
+                'name' => clean_param((string) ($slidedata['name'] ?? ''), PARAM_TEXT),
+                'hidetitle' => empty($slidedata['hidetitle']) ? 0 : 1,
+                'content' => slideshow_sanitize_slide_content((string) ($slidedata['content'] ?? ''), $format),
+                'contentformat' => $format,
+                'layout' => slideshow_normalize_layout(isset($slidedata['layout']) ? (string) $slidedata['layout'] : null),
+                'hidden' => empty($slidedata['hidden']) ? 0 : 1,
+                'sortorder' => $sortorder++,
+                'timemodified' => time(),
+            ];
+            $DB->insert_record('slideshow_slide', $record);
         }
     }
 
@@ -480,28 +498,29 @@ function slideshow_dndupload_register() {
  * @return int instance id of the newly created mod
  */
 function slideshow_dndupload_handle($uploadinfo) {
-    // Gather the required info.
+    // The plugin has no admin settings, so use explicit defaults.
+    $displayname = clean_param((string) $uploadinfo->displayname, PARAM_TEXT);
+
     $data = new stdClass();
     $data->course = $uploadinfo->course->id;
-    $data->name = $uploadinfo->displayname;
-    $data->intro = '<p>' . $uploadinfo->displayname . '</p>';
+    $data->name = $displayname;
+    $data->intro = html_writer::tag('p', s($displayname));
     $data->introformat = FORMAT_HTML;
-    if ($uploadinfo->type == 'text/html') {
-        $data->contentformat = FORMAT_HTML;
-        $data->content = clean_param($uploadinfo->content, PARAM_CLEANHTML);
-    } else {
-        $data->contentformat = FORMAT_PLAIN;
-        $data->content = clean_param($uploadinfo->content, PARAM_TEXT);
-    }
     $data->coursemodule = $uploadinfo->coursemodule;
+    $data->display = 0;
+    $data->displayoptions = '';
 
-    // Set the display options to the site defaults.
-    $config = get_config('slideshow');
-    $data->display = $config->display;
-    $data->popupheight = $config->popupheight;
-    $data->popupwidth = $config->popupwidth;
-    $data->printintro = $config->printintro;
-    $data->printlastmodified = $config->printlastmodified;
+    // The dropped content becomes the first slide. slideshow_add_instance() cleans it.
+    if ($uploadinfo->type == 'text/html') {
+        $contentformat = FORMAT_HTML;
+    } else {
+        $contentformat = FORMAT_PLAIN;
+    }
+    $data->slides = [[
+        'name' => $displayname,
+        'content' => (string) $uploadinfo->content,
+        'contentformat' => $contentformat,
+    ]];
 
     return slideshow_add_instance($data, null);
 }
