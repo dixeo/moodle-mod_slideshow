@@ -55,6 +55,7 @@ class backup_slideshow_activity_structure_step extends backup_activity_structure
 
         $slideshow->annotate_files('mod_slideshow', 'intro', null);
         $slide->annotate_files('mod_slideshow', 'content', 'id');
+        $slide->annotate_files('mod_slideshow', 'image', 'id');
 
         return $this->prepare_activity_structure($slideshow);
     }

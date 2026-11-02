@@ -1028,6 +1028,8 @@ function slideshow_process_ajax_action(
 
             $fs = get_file_storage();
             $fs->delete_area_files($context->id, 'mod_slideshow', 'content', $slideid);
+            // The featured image shares the slide itemid, so delete it with the slide.
+            $fs->delete_area_files($context->id, 'mod_slideshow', 'image', $slideid);
 
             $deleted = $DB->delete_records('slideshow_slide', ['id' => $slideid]);
 

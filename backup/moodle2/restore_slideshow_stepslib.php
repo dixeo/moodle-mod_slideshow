@@ -92,10 +92,11 @@ class restore_slideshow_activity_structure_step extends restore_activity_structu
     }
 
     /**
-     * Attach intro and slide content files after restore.
+     * Attach intro, slide content and featured slide image files after restore.
      */
     protected function after_execute() {
         $this->add_related_files('mod_slideshow', 'intro', null);
         $this->add_related_files('mod_slideshow', 'content', 'slideshow_slide');
+        $this->add_related_files('mod_slideshow', 'image', 'slideshow_slide');
     }
 }

@@ -256,6 +256,7 @@ function slideshow_get_coursemodule_info($coursemodule) {
 function slideshow_get_file_areas($course, $cm, $context) {
     $areas = [];
     $areas['content'] = get_string('content', 'slideshow');
+    $areas['image'] = get_string('image', 'slideshow');
     return $areas;
 }
 
@@ -285,15 +286,15 @@ function slideshow_get_file_info($browser, $areas, $course, $cm, $context, $file
 
     $fs = get_file_storage();
 
-    if ($filearea === 'content') {
+    if ($filearea === 'content' || $filearea === 'image') {
         $filepath = is_null($filepath) ? '/' : $filepath;
         $filename = is_null($filename) ? '.' : $filename;
         $itemid = $itemid === null ? 0 : (int) $itemid;
 
         $urlbase = $CFG->wwwroot . '/pluginfile.php';
-        if (!$storedfile = $fs->get_file($context->id, 'mod_slideshow', 'content', $itemid, $filepath, $filename)) {
+        if (!$storedfile = $fs->get_file($context->id, 'mod_slideshow', $filearea, $itemid, $filepath, $filename)) {
             if ($filepath === '/' && $filename === '.') {
-                $storedfile = new virtual_root_file($context->id, 'mod_slideshow', 'content', $itemid);
+                $storedfile = new virtual_root_file($context->id, 'mod_slideshow', $filearea, $itemid);
             } else {
                 // File not found.
                 return null;
