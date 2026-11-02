@@ -231,10 +231,17 @@ function slideshow_get_coursemodule_info($coursemodule) {
         return $info;
     }
 
-    $fullurl = "$CFG->wwwroot/mod/slideshow/view.php?id=$coursemodule->id&amp;inpopup=1";
+    $fullurl = (new moodle_url('/mod/slideshow/view.php', ['id' => (int) $coursemodule->id, 'inpopup' => 1]))->out(true);
     $options = empty($slideshow->displayoptions) ? [] : (array) unserialize_array($slideshow->displayoptions);
-    $width  = empty($options['popupwidth']) ? 620 : $options['popupwidth'];
-    $height = empty($options['popupheight']) ? 450 : $options['popupheight'];
+    // Cast to integers: the values are written into an inline onclick handler.
+    $width  = empty($options['popupwidth']) ? 620 : (int) $options['popupwidth'];
+    $height = empty($options['popupheight']) ? 450 : (int) $options['popupheight'];
+    if ($width <= 0) {
+        $width = 620;
+    }
+    if ($height <= 0) {
+        $height = 450;
+    }
     $wh = "width=$width,height=$height,toolbar=no,location=no,menubar=no,copyhistory=no,"
         . "status=no,directories=no,scrollbars=yes,resizable=yes";
     $info->onclick = "window.open('$fullurl', '', '$wh'); return false;";
@@ -746,8 +753,8 @@ function slideshow_add_button_to_context_header($page) {
     }
 
     // Detect slide management page to show play instead of edit.
-    $url = $_SERVER['PHP_SELF'];
-    if (str_contains($url, $target)) {
+    $currentpath = $page->has_set_url() ? $page->url->get_path() : '';
+    if (str_contains($currentpath, $target)) {
         if (has_capability('mod/slideshow:view', $page->cm->context)) {
             $playstring = get_string('start', 'slideshow');
             $playurl = new moodle_url('/mod/slideshow/view.php', ['id' => $page->cm->id]);

@@ -50,9 +50,32 @@ class restore_slideshow_activity_structure_step extends restore_activity_structu
         $data = (object) $data;
         $data->course = $this->get_courseid();
         $data->timemodified = $this->apply_date_offset($data->timemodified);
+        // Backup files are untrusted: keep display settings typed.
+        $data->display = (int) ($data->display ?? 0);
+        $data->displayoptions = self::clean_display_options($data->displayoptions ?? null);
 
         $newitemid = $DB->insert_record('slideshow', $data);
         $this->apply_activity_instance($newitemid);
+    }
+
+    /**
+     * Rebuild serialised display options keeping only known integer values.
+     *
+     * @param string|null $raw Serialised display options from the backup.
+     * @return string|null
+     */
+    protected static function clean_display_options(?string $raw): ?string {
+        if ($raw === null || $raw === '') {
+            return $raw;
+        }
+        $options = (array) unserialize_array($raw);
+        $clean = [];
+        foreach (['popupwidth', 'popupheight', 'printintro', 'printlastmodified'] as $key) {
+            if (isset($options[$key]) && is_scalar($options[$key])) {
+                $clean[$key] = (int) $options[$key];
+            }
+        }
+        return serialize($clean);
     }
 
     /**
