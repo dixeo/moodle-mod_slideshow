@@ -62,7 +62,7 @@ define([
                 let neworder = e.detail.spliceIndex;
 
                 if (neworder !== oldorder) {
-                    changeSortOrder(slideid, neworder, oldorder);
+                    changeSortOrder(slideid, neworder);
                 }
                 return false;
             }, false);
@@ -159,19 +159,17 @@ define([
             };
 
             /**
-             * Change sort order
+             * Change sort order. The server reads the current position of the slide itself.
              * @param {Number} slideid Slide ID
-             * @param {Number} neworder New order
-             * @param {Number} oldorder Old order
+             * @param {Number} neworder New 0-based position
              */
-            let changeSortOrder = (slideid, neworder, oldorder) => {
+            let changeSortOrder = (slideid, neworder) => {
                 var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
 
                 return Ajax.call([{
                     methodname: 'mod_slideshow_reorder_slide',
                     args: {
                         slideid: slideid,
-                        oldorder: oldorder,
                         neworder: neworder,
                     },
                 }])[0].then(function() {

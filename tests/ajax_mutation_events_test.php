@@ -113,7 +113,7 @@ final class ajax_mutation_events_test extends \advanced_testcase {
 
         $sink = $this->redirectEvents();
         $response = $this->with_db_proxy($proxy, function () use ($slidea, $slideshow, $context) {
-            return slideshow_process_ajax_action('reorder', $slidea, $slideshow, $context, 0, 1);
+            return slideshow_process_ajax_action('reorder', $slidea, $slideshow, $context, 1);
         });
 
         $this->assertFalse($response['result']);

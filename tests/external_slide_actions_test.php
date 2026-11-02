@@ -157,7 +157,7 @@ final class external_slide_actions_test extends \advanced_testcase {
         ]);
         $this->setUser($teacher);
 
-        $result = reorder_slide::execute($firstid, 0, 1);
+        $result = reorder_slide::execute($firstid, 1);
         $result = external_api::clean_returnvalue(reorder_slide::execute_returns(), $result);
 
         $this->assertTrue($result['result']);

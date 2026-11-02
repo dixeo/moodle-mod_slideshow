@@ -964,16 +964,15 @@ function slideshow_balance_slide_html(string $html, int $slideid): string {
  * @param stdClass $slide Slide record being mutated.
  * @param stdClass $slideshow Parent slideshow instance.
  * @param context $context Module context.
- * @param int $oldorder Previous sort order for reorder.
- * @param int $neworder Target sort order for reorder.
+ * @param int $neworder Target 0-based position for reorder (0 .. number of slides - 1).
  * @return array JSON-serializable response payload, or empty array for unknown actions.
+ * @throws \invalid_parameter_exception When the reorder target position is out of range.
  */
 function slideshow_process_ajax_action(
     string $action,
     stdClass $slide,
     stdClass $slideshow,
     context $context,
-    int $oldorder = 0,
     int $neworder = 0
 ): array {
     global $DB;
@@ -982,42 +981,28 @@ function slideshow_process_ajax_action(
 
     switch ($action) {
         case 'reorder':
-            $success = true;
-            $transaction = $DB->start_delegated_transaction();
-
-            // Update sort order values.
-            $records = $DB->get_records('slideshow_slide', ['slideshow' => $slide->slideshow], 'sortorder');
-            foreach ($records as $record) {
-                if ($record->sortorder == $oldorder) {
-                    $record->sortorder = $neworder;
-                } else {
-                    if ($neworder > $oldorder) {
-                        if ($record->sortorder > $oldorder && $record->sortorder <= $neworder) {
-                            $record->sortorder--;
-                        }
-                    } else {
-                        if ($record->sortorder >= $neworder && $record->sortorder < $oldorder) {
-                            $record->sortorder++;
-                        }
-                    }
-                }
-                if (!$DB->update_record('slideshow_slide', $record)) {
-                    $success = false;
-                    break;
-                }
+            // The slide that moves is always the authorised $slide; its current position is
+            // derived from the stored order, never from the client.
+            $records = $DB->get_records('slideshow_slide', ['slideshow' => $slide->slideshow], 'sortorder ASC, id ASC');
+            $maxposition = count($records) - 1;
+            if ($neworder < 0 || $neworder > $maxposition) {
+                throw new \invalid_parameter_exception('Invalid target position');
             }
 
-            // Fix gaps in sortorder.
-            if ($success) {
-                $records = $DB->get_records('slideshow_slide', ['slideshow' => $slide->slideshow], 'sortorder');
-                $sortorder = 0;
-                foreach ($records as $record) {
-                    $record->sortorder = $sortorder;
-                    $sortorder++;
-                    if (!$DB->update_record('slideshow_slide', $record)) {
-                        $success = false;
-                        break;
-                    }
+            $orderedids = array_map('intval', array_keys($records));
+            $orderedids = array_values(array_diff($orderedids, [$slideid]));
+            array_splice($orderedids, $neworder, 0, [$slideid]);
+
+            $success = true;
+            $transaction = $DB->start_delegated_transaction();
+            foreach ($orderedids as $position => $id) {
+                if ((int) $records[$id]->sortorder === $position) {
+                    continue;
+                }
+                $update = (object) ['id' => $id, 'sortorder' => $position];
+                if (!$DB->update_record('slideshow_slide', $update)) {
+                    $success = false;
+                    break;
                 }
             }
 

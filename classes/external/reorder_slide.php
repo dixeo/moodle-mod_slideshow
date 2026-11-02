@@ -30,7 +30,7 @@ use core_external\external_single_structure;
 use core_external\external_value;
 
 /**
- * Move one slide from an old sort position to a new one.
+ * Move one slide to a new position.
  */
 class reorder_slide extends external_api {
     use manage_slide;
@@ -43,26 +43,25 @@ class reorder_slide extends external_api {
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'slideid' => new external_value(PARAM_INT, 'Slide id'),
-            'oldorder' => new external_value(PARAM_INT, 'Current sort position'),
-            'neworder' => new external_value(PARAM_INT, 'Target sort position'),
+            'neworder' => new external_value(PARAM_INT, 'Target 0-based position'),
         ]);
     }
 
     /**
      * Reorder a slide the user is allowed to manage.
      *
+     * The slide that moves is the authorised slide; its current position is read from the database.
+     *
      * @param int $slideid Slide id
-     * @param int $oldorder Current sort position
-     * @param int $neworder Target sort position
+     * @param int $neworder Target 0-based position
      * @return array Slide id and whether the new order was stored
      */
-    public static function execute(int $slideid, int $oldorder, int $neworder): array {
+    public static function execute(int $slideid, int $neworder): array {
         global $CFG;
         require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
 
         $params = self::validate_parameters(self::execute_parameters(), [
             'slideid' => $slideid,
-            'oldorder' => $oldorder,
             'neworder' => $neworder,
         ]);
         [$slide, $slideshow, $context] = self::require_manage_slide($params['slideid']);
@@ -72,7 +71,6 @@ class reorder_slide extends external_api {
             $slide,
             $slideshow,
             $context,
-            $params['oldorder'],
             $params['neworder']
         );
     }
