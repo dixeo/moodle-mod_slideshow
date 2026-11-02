@@ -862,6 +862,40 @@ function mod_slideshow_fragment_require_manage(array $args, int $cmid = 0): arra
 }
 
 /**
+ * Server-rendered body for the live preview on the slide edit form.
+ *
+ * The unsaved editor content is cleaned and formatted with format_text() in the module context,
+ * exactly like the player, so the preview never inserts raw HTML into the page.
+ *
+ * @param array $args Fragment arguments: context, content, format.
+ * @return string Formatted slide body HTML.
+ */
+function mod_slideshow_output_fragment_preview(array $args): string {
+    global $CFG;
+
+    require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
+
+    [, $context] = mod_slideshow_fragment_require_manage($args);
+
+    $content = (string) ($args['content'] ?? '');
+    $format = clean_param($args['format'] ?? FORMAT_HTML, PARAM_INT);
+    if (!array_key_exists($format, format_text_menu())) {
+        $format = FORMAT_HTML;
+    }
+    if (trim($content) === '') {
+        return '';
+    }
+
+    $formatoptions = new stdClass();
+    $formatoptions->overflowdiv = false;
+    $formatoptions->context = $context;
+    $formatoptions->noclean = false;
+    $html = format_text($content, $format, $formatoptions);
+
+    return slideshow_balance_slide_html($html, 0);
+}
+
+/**
  * Quick-edit form for the slide currently shown in the player.
  *
  * @param array $args Fragment arguments with cmid and slideid.

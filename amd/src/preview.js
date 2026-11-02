@@ -20,12 +20,15 @@
  * Layout, the hide-title checkbox, and the image update as soon as they change.
  * Nothing here is submitted.
  *
+ * The slide body is never inserted as raw HTML. It is sent to the mod_slideshow/preview
+ * fragment, which cleans and formats it with format_text() in the module context.
+ *
  * @module      mod_slideshow/preview
  * @copyright   2026 Dixeo
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-define([], function() {
+define(['core/fragment', 'core/templates'], function(Fragment, Templates) {
 
     /** @var {string} Layout that shows only the title. */
     const LAYOUT_TITLEONLY = 'titleonly';
@@ -96,6 +99,19 @@ define([], function() {
     };
 
     /**
+     * Current editor format (HTML, Moodle, plain text, Markdown).
+     *
+     * @return {string}
+     */
+    const readFormat = () => {
+        const select = document.querySelector('[name="content_editor[format]"]');
+        if (!select || !select.value) {
+            return '1';
+        }
+        return String(select.value);
+    };
+
+    /**
      * Draft or plugin file URL for the slide image, when one is chosen.
      *
      * The file manager shows that file as a thumbnail. A file picker link is
@@ -156,11 +172,55 @@ define([], function() {
         return layout === LAYOUT_BACKGROUND || isSplitLayout(layout);
     };
 
+    /** @var {number} Context id of the slideshow module, used for the preview fragment. */
+    let previewContextId = 0;
+
+    /** @var {number} Increases with every body request so a stale response is ignored. */
+    let bodyRequest = 0;
+
+    /** @var {{key: string, html: string}|null} Last server-rendered body. */
+    let bodyCache = null;
+
+    /**
+     * Fill the preview body with server-cleaned HTML for the current content.
+     *
+     * @param {HTMLElement} body
+     * @param {string} content
+     * @param {string} format
+     */
+    const renderBody = (body, content, format) => {
+        const key = format + '\u0000' + content;
+        if (bodyCache && bodyCache.key === key) {
+            Templates.replaceNodeContents(body, bodyCache.html, '');
+            return;
+        }
+        if (content.trim() === '' || !previewContextId) {
+            bodyCache = {key: key, html: ''};
+            return;
+        }
+        bodyRequest = bodyRequest + 1;
+        const request = bodyRequest;
+        Fragment.loadFragment('mod_slideshow', 'preview', previewContextId, {
+            content: content,
+            format: format,
+        }).then((html, js) => {
+            if (request !== bodyRequest) {
+                return;
+            }
+            bodyCache = {key: key, html: html};
+            Templates.replaceNodeContents(body, html, js);
+            return;
+        }).catch(() => {
+            // The preview is visual only. Leave the body empty when it cannot be rendered.
+            return;
+        });
+    };
+
     /**
      * Build the preview DOM for the current form values.
      *
      * @param {HTMLElement} root
-     * @param {{title: string, hideTitle: boolean, content: string, layout: string, imageUrl: string}} state
+     * @param {{title: string, hideTitle: boolean, content: string, format: string, layout: string, imageUrl: string}} state
      */
     const render = (root, state) => {
         while (root.firstChild) {
@@ -188,7 +248,7 @@ define([], function() {
         if (layout !== LAYOUT_TITLEONLY) {
             const body = document.createElement('div');
             body.className = 'slide-body';
-            body.innerHTML = state.content;
+            renderBody(body, state.content, state.format);
             if (isSplitLayout(layout)) {
                 const media = document.createElement('div');
                 media.className = 'slide-media';
@@ -220,17 +280,21 @@ define([], function() {
     return {
         /**
          * Start the preview for the slide edit form.
+         *
+         * @param {number} contextid Module context id for the preview fragment.
          */
-        init: () => {
+        init: (contextid) => {
             const root = document.getElementById('slideshow-slide-preview');
             if (!root) {
                 return;
             }
+            previewContextId = Number(contextid) || 0;
 
             const state = {
                 title: readTitle(),
                 hideTitle: readHideTitle(),
                 content: readContent(),
+                format: readFormat(),
                 layout: readLayout(),
                 imageUrl: readImageUrl(),
             };
@@ -259,6 +323,14 @@ define([], function() {
                 layoutGroup.addEventListener('change', () => {
                     state.layout = readLayout();
                     state.imageUrl = readImageUrl();
+                    draw();
+                });
+            }
+
+            const formatSelect = document.querySelector('[name="content_editor[format]"]');
+            if (formatSelect) {
+                formatSelect.addEventListener('change', () => {
+                    state.format = readFormat();
                     draw();
                 });
             }
@@ -293,6 +365,7 @@ define([], function() {
                     tinyBound = true;
                     tiny.on('blur', () => {
                         state.content = tiny.getContent();
+                        state.format = readFormat();
                         draw();
                     });
                 }
@@ -301,6 +374,7 @@ define([], function() {
                     attoBound = true;
                     atto.addEventListener('blur', () => {
                         state.content = atto.innerHTML;
+                        state.format = readFormat();
                         draw();
                     });
                 }
@@ -312,6 +386,7 @@ define([], function() {
                             return;
                         }
                         state.content = textarea.value;
+                        state.format = readFormat();
                         draw();
                     });
                 }

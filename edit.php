@@ -168,7 +168,7 @@ if ($mform->is_cancelled()) {
     $PAGE->set_cm($cm);
 
     $PAGE->activityheader->disable();
-    $PAGE->requires->js_call_amd('mod_slideshow/preview', 'init');
+    $PAGE->requires->js_call_amd('mod_slideshow/preview', 'init', [$context->id]);
 
     echo $OUTPUT->header();
     echo $OUTPUT->heading_with_help($pageheading, '', 'slideshow');
