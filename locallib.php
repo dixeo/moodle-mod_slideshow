@@ -520,6 +520,7 @@ function slideshow_render_featured_image_editor(\context $context, \stored_file 
  * @param string|null $imageurl Slide image URL, or null when no file is stored.
  * @param bool $hidden True when the slide is not the one shown first.
  * @param string $editorhtml Image-editor control. A background slide keeps it on the slide; a split layout places it on the image.
+ * @param \context|null $context Module context used to format the title (filters, multilang).
  * @return string
  */
 function slideshow_render_slide_html(
@@ -527,7 +528,8 @@ function slideshow_render_slide_html(
     string $contenthtml,
     ?string $imageurl,
     bool $hidden = false,
-    string $editorhtml = ''
+    string $editorhtml = '',
+    ?\context $context = null
 ): string {
     $layout = slideshow_normalize_layout($slide->layout ?? null);
     $hasimage = slideshow_layout_shows_image($layout) && $imageurl !== null && $imageurl !== '';
@@ -542,7 +544,8 @@ function slideshow_render_slide_html(
 
     $inner = '';
     if (slideshow_slide_shows_title($slide)) {
-        $inner = html_writer::tag('h2', format_string($slide->name ?? ''), ['class' => 'slide-title']);
+        $titleoptions = $context ? ['context' => $context] : [];
+        $inner = html_writer::tag('h2', format_string($slide->name ?? '', true, $titleoptions), ['class' => 'slide-title']);
     }
 
     if ($layout !== MOD_SLIDESHOW_LAYOUT_TITLEONLY) {
@@ -626,7 +629,7 @@ function slideshow_render_player_slide(stdClass $slide, \context $context, bool 
             $editorhtml = slideshow_render_featured_image_editor($context, $file);
         }
     }
-    return slideshow_render_slide_html($slide, $content, $imageurl, $hidden, $editorhtml);
+    return slideshow_render_slide_html($slide, $content, $imageurl, $hidden, $editorhtml, $context);
 }
 
 /**
@@ -738,7 +741,7 @@ function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass 
     return [
         'errors' => [],
         'html' => slideshow_render_player_slide($updated, $context, false),
-        'name' => slideshow_get_slide_list_name($updated),
+        'name' => slideshow_get_slide_list_name($updated, MOD_SLIDESHOW_SLIDE_LIST_LABEL_MAX, $context),
         'preview' => slideshow_get_slide_list_preview_html($updated, $context),
     ];
 }
@@ -807,7 +810,7 @@ function slideshow_get_slide_list_preview_html(stdClass $slide, \context $contex
         $imageurl = slideshow_get_slide_image_url($context, (int) $slide->id, true);
     }
 
-    $slidehtml = slideshow_render_slide_html($slide, $content, $imageurl, false);
+    $slidehtml = slideshow_render_slide_html($slide, $content, $imageurl, false, '', $context);
     $scaled = html_writer::div($slidehtml, 'slideshow-container slide-list-thumb-scale');
     return html_writer::div($scaled, 'slide-list-thumb', ['aria-hidden' => 'true']);
 }
@@ -820,12 +823,18 @@ function slideshow_get_slide_list_preview_html(stdClass $slide, \context $contex
  *
  * @param stdClass $slide slideshow_slide row (name, content).
  * @param int $maxlength Maximum characters (multibyte-safe).
+ * @param \context|null $context Module context used to format the stored name.
  * @return string Plain-text label for display.
  */
-function slideshow_get_slide_list_name(stdClass $slide, int $maxlength = MOD_SLIDESHOW_SLIDE_LIST_LABEL_MAX): string {
+function slideshow_get_slide_list_name(
+    stdClass $slide,
+    int $maxlength = MOD_SLIDESHOW_SLIDE_LIST_LABEL_MAX,
+    ?\context $context = null
+): string {
     $storedname = trim((string) ($slide->name ?? ''));
     if ($storedname !== '') {
-        return slideshow_truncate_slide_list_label(format_string($storedname), $maxlength);
+        $nameoptions = $context ? ['context' => $context] : [];
+        return slideshow_truncate_slide_list_label(format_string($storedname, true, $nameoptions), $maxlength);
     }
 
     $content = (string) ($slide->content ?? '');

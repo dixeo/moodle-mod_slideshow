@@ -77,7 +77,7 @@ $displayindex = 1;
 foreach ($slides as $slide) {
     $data->slides[] = [
         'id' => $slide->id,
-        'name' => slideshow_get_slide_list_name($slide),
+        'name' => slideshow_get_slide_list_name($slide, MOD_SLIDESHOW_SLIDE_LIST_LABEL_MAX, $context),
         'slideshow' => $slide->slideshow,
         'sortorder' => $slide->sortorder,
         'index' => $displayindex,
