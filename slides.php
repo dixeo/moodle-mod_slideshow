@@ -47,6 +47,8 @@ $PAGE->set_pagelayout('admin');
 require_course_login($course, true, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/slideshow:viewslides', $context);
+// The list (including hidden slides) is readable with viewslides; every change needs manageslides.
+$canmanage = has_capability('mod/slideshow:manageslides', $context);
 
 $PAGE->set_url('/mod/slideshow/slides.php', ['id' => $cm->id]);
 
@@ -59,7 +61,9 @@ $PAGE->activityheader->set_attrs([
     'description' => '',
 ]);
 
-$PAGE->requires->js_call_amd('mod_slideshow/slides', 'init', [$cm->id, $context->id]);
+if ($canmanage) {
+    $PAGE->requires->js_call_amd('mod_slideshow/slides', 'init', [$cm->id, $context->id]);
+}
 
 echo $OUTPUT->header();
 
@@ -67,6 +71,7 @@ $slides = $DB->get_records('slideshow_slide', ['slideshow' => $cm->instance], 's
 
 $data = new stdClass();
 $data->cmid = $cm->id;
+$data->canmanage = $canmanage;
 $data->slides = [];
 $displayindex = 1;
 foreach ($slides as $slide) {
@@ -84,7 +89,9 @@ foreach ($slides as $slide) {
 
 echo $OUTPUT->render_from_template('mod_slideshow/slideshow', $data);
 
-$newslideurl = new moodle_url('/mod/slideshow/edit.php', ['cm' => $cm->id]);
-echo $OUTPUT->single_button($newslideurl, get_string('addnew', 'slideshow'), 'get', ['class' => 'w-100 mb-3 text-right']);
+if ($canmanage) {
+    $newslideurl = new moodle_url('/mod/slideshow/edit.php', ['cm' => $cm->id]);
+    echo $OUTPUT->single_button($newslideurl, get_string('addnew', 'slideshow'), 'get', ['class' => 'w-100 mb-3 text-right']);
+}
 
 echo $OUTPUT->footer();

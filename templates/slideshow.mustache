@@ -30,10 +30,12 @@
 
     Context variables required for this template:
     * slides
+    * canmanage (show the edit, delete and visibility controls)
 
     Example context (json):
     {
         "cmid": 1,
+        "canmanage": true,
         "slides": [
             {
                 "sortorder": 1,
@@ -54,6 +56,7 @@
                 <div class="handle instant">{{index}}</div>
                 {{{preview}}}
                 <div class="name">{{name}}</div>
+                {{#canmanage}}
                 <div class="actions">
                     <button title="{{#str}}delete, slideshow{{/str}}" class="delete btn btn-default">
                         {{#pix}} i/trash, core {{/pix}}
@@ -68,6 +71,7 @@
                         {{#pix}} i/manual_item, core {{/pix}}
                     </button>
                 </div>
+                {{/canmanage}}
             </li>
         {{/slides}}
     </ul>

@@ -55,6 +55,6 @@ $functions = [
         'description' => 'Save the slide open in the player modal',
         'type' => 'write',
         'ajax' => true,
-        'capabilities' => 'mod/slideshow:viewslides',
+        'capabilities' => 'mod/slideshow:manageslides',
     ],
 ];

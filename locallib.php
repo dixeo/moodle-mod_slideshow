@@ -640,7 +640,7 @@ function slideshow_render_player_slide(stdClass $slide, \context $context, bool 
 function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass $data): array {
     global $DB;
 
-    require_capability('mod/slideshow:viewslides', $context);
+    require_capability('mod/slideshow:manageslides', $context);
 
     $errors = [];
     $name = trim((string) ($data->name ?? ''));

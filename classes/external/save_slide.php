@@ -116,7 +116,7 @@ class save_slide extends external_api {
             'editorsessionid' => $editorsessionid,
             'hidetitle' => $hidetitle,
         ]);
-        [$slide, $context] = self::require_view_slide($params['cmid'], $params['slideid']);
+        [$slide, $context] = self::require_edit_slide($params['cmid'], $params['slideid']);
         if (!empty($params['usedixeo']) && slideshow_quick_edit_uses_moodle_editor($context)) {
             throw new \moodle_exception('nopermissions', 'error', '', 'local/dixeo:edit');
         }
@@ -167,13 +167,13 @@ class save_slide extends external_api {
     }
 
     /**
-     * Require login and mod/slideshow:viewslides, and load the slide for this module.
+     * Require login and mod/slideshow:manageslides, and load the slide for this module.
      *
      * @param int $cmid Course module id
      * @param int $slideid Slide id
      * @return array{0: \stdClass, 1: \context_module} Slide and module context
      */
-    protected static function require_view_slide(int $cmid, int $slideid): array {
+    protected static function require_edit_slide(int $cmid, int $slideid): array {
         global $DB;
 
         $cm = get_coursemodule_from_id('slideshow', $cmid, 0, false, MUST_EXIST);
@@ -181,7 +181,7 @@ class save_slide extends external_api {
         require_login($course, false, $cm);
         $context = \context_module::instance($cm->id);
         self::validate_context($context);
-        require_capability('mod/slideshow:viewslides', $context);
+        require_capability('mod/slideshow:manageslides', $context);
 
         $slide = $DB->get_record('slideshow_slide', [
             'id' => $slideid,

@@ -393,11 +393,25 @@ function slideshow_export_contents($cm, $baseurl) {
 
     $slideshow = $DB->get_record('slideshow', ['id' => $cm->instance], '*', MUST_EXIST);
 
+    // Only list files the user could also download through slideshow_pluginfile():
+    // files of hidden slides need viewslides, and legacy shared itemid 0 / orphan files need manageslides.
+    $slidevisibility = $DB->get_records_menu('slideshow_slide', ['slideshow' => $cm->instance], '', 'id, hidden');
+    $canviewhidden = has_capability('mod/slideshow:viewslides', $context);
+    $canmanage = has_capability('mod/slideshow:manageslides', $context);
+
     // Slideshow slide files from storage.
     $fs = get_file_storage();
     $files = $fs->get_area_files($context->id, 'mod_slideshow', 'content', false, 'itemid, filepath, filename', false);
     foreach ($files as $fileinfo) {
         if ($fileinfo->is_directory()) {
+            continue;
+        }
+        $fileitemid = (int) $fileinfo->get_itemid();
+        if (!array_key_exists($fileitemid, $slidevisibility)) {
+            if (!$canmanage) {
+                continue;
+            }
+        } else if (!empty($slidevisibility[$fileitemid]) && !$canviewhidden) {
             continue;
         }
         $file = [];
@@ -815,6 +829,39 @@ function slideshow_add_button_to_activity_menu($page) {
 }
 
 /**
+ * Access check shared by the slideshow output fragments.
+ *
+ * core_get_fragment only validates the context id sent by the browser. The fragment is bound to
+ * that validated context: it must be the module context of a slideshow (and of $cmid when the
+ * caller also sends one), the user must have full access to that module, and editing requires
+ * mod/slideshow:manageslides.
+ *
+ * @param array $args Fragment arguments, including the validated 'context'.
+ * @param int $cmid Course module id sent by the caller, or 0 to use the context's module.
+ * @return array{0: \stdClass, 1: \context_module} Course module and module context.
+ */
+function mod_slideshow_fragment_require_manage(array $args, int $cmid = 0): array {
+    $validated = $args['context'] ?? null;
+    if (!$validated instanceof \context || (int) $validated->contextlevel !== CONTEXT_MODULE) {
+        throw new \moodle_exception('invalidaccessparameter');
+    }
+    if ($cmid && (int) $validated->instanceid !== $cmid) {
+        throw new \moodle_exception('invalidaccessparameter');
+    }
+
+    $cm = get_coursemodule_from_id('slideshow', (int) $validated->instanceid, 0, false, MUST_EXIST);
+    $context = context_module::instance($cm->id);
+    if ((int) $context->id !== (int) $validated->id) {
+        throw new \moodle_exception('invalidaccessparameter');
+    }
+
+    require_login($cm->course, false, $cm, false, true);
+    require_capability('mod/slideshow:manageslides', $context);
+
+    return [$cm, $context];
+}
+
+/**
  * Quick-edit form for the slide currently shown in the player.
  *
  * @param array $args Fragment arguments with cmid and slideid.
@@ -832,9 +879,7 @@ function mod_slideshow_output_fragment_quickedit(array $args): string {
         throw new \moodle_exception('invalidaccessparameter');
     }
 
-    $cm = get_coursemodule_from_id('slideshow', $cmid, 0, false, MUST_EXIST);
-    $context = context_module::instance($cm->id);
-    require_capability('mod/slideshow:viewslides', $context);
+    [$cm, $context] = mod_slideshow_fragment_require_manage($args, $cmid);
 
     $slide = $DB->get_record('slideshow_slide', [
         'id' => $slideid,

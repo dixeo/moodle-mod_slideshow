@@ -36,7 +36,8 @@ $course = get_course($cm->course, MUST_EXIST);
 require_course_login($course, true, $cm);
 
 $context = context_module::instance($cm->id);
-require_capability('mod/slideshow:viewslides', $context);
+// Creating and editing slides requires the write capability.
+require_capability('mod/slideshow:manageslides', $context);
 
 if ($slideid && slideshow_use_dixeo_editor($context)) {
     redirect(new moodle_url('/local/dixeo_editor/content_edition.php', ['cmid' => $cmid, 'slideid' => $slideid]));

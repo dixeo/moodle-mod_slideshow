@@ -34,8 +34,8 @@ $capabilities = [
         ],
     ],
 
+    // Read capability: list slides and see hidden slides. It grants no content changes.
     'mod/slideshow:viewslides' => [
-        'riskbitmask' => RISK_XSS,
         'captype' => 'read',
         'contextlevel' => CONTEXT_MODULE,
         'archetypes' => [
@@ -56,13 +56,16 @@ $capabilities = [
         'clonepermissionsfrom' => 'moodle/course:manageactivities',
     ],
 
+    // Write capability: create, edit, reorder, show/hide and delete slides.
+    // Like moodle/course:manageactivities, it is not given to the non-editing teacher archetype.
     'mod/slideshow:manageslides' => [
+        'riskbitmask' => RISK_XSS | RISK_DATALOSS,
         'captype' => 'write',
         'contextlevel' => CONTEXT_MODULE,
         'archetypes' => [
-            'teacher' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
             'manager' => CAP_ALLOW,
         ],
+        'clonepermissionsfrom' => 'moodle/course:manageactivities',
     ],
 ];

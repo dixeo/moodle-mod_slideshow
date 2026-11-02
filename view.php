@@ -63,7 +63,7 @@ $slides = $DB->get_records('slideshow_slide', ['slideshow' => $cm->instance, 'hi
 
 if ($slides) {
     $jsparams = ['cmid' => $cm->id];
-    if (has_capability('mod/slideshow:viewslides', $context)) {
+    if (has_capability('mod/slideshow:manageslides', $context)) {
         $jsparams['contextid'] = $context->id;
     }
 
@@ -86,7 +86,7 @@ foreach ($slides as $slide) {
     $firstslide = false;
 }
 
-$caneditslides = has_capability('mod/slideshow:viewslides', $context);
+$caneditslides = has_capability('mod/slideshow:manageslides', $context);
 
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('mod_slideshow/player', [
