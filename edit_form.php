@@ -116,10 +116,6 @@ class mod_slideshow_slide_edit_form extends moodleform {
         $mform->addElement('hidden', 'slideshow');
         $mform->setType('slideshow', PARAM_INT);
         $mform->setDefault('slideshow', $cm->instance);
-
-        $mform->addElement('hidden', 'hidden');
-        $mform->setType('hidden', PARAM_INT);
-        $mform->setDefault('hidden', 0);
     }
 
     /**

@@ -228,7 +228,7 @@ function slideshow_user_can_view_slide_files(?stdClass $slide, \context $context
  *
  * Only whitelisted columns are copied; the owning slideshow id is always taken from the course module.
  *
- * @param stdClass $fromform Form data with name, layout, hidetitle, hidden, and id when updating.
+ * @param stdClass $fromform Form data with name, layout, hidetitle, and id when updating. Any hidden value is ignored.
  * @param int $slideshowid Owning slideshow instance id ($cm->instance).
  * @param bool $isnewslide True when creating a new slide.
  * @param int $sortorder Sort order for new slides only.
@@ -249,11 +249,14 @@ function slideshow_prepare_slide_save_record(
     } else {
         $record->hidetitle = empty($fromform->hidetitle) ? 0 : 1;
     }
-    $record->hidden = (int) $fromform->hidden;
+    // Visibility is never taken from the submitted form. It is only changed through the
+    // set_slide_visibility service, which requires mod/slideshow:manageslides. New slides start
+    // visible; updates leave the stored value untouched because the column is not in the record.
     $record->slideshow = $slideshowid;
     $record->timemodified = time();
 
     if ($isnewslide) {
+        $record->hidden = 0;
         $record->sortorder = $sortorder;
         $record->content = '';
         $record->contentformat = FORMAT_HTML;
@@ -687,7 +690,6 @@ function slideshow_save_quick_edit(stdClass $slide, \context $context, stdClass 
 
     $data->name = $name;
     $data->id = (int) $slide->id;
-    $data->hidden = (int) $slide->hidden;
     $record = slideshow_prepare_slide_save_record($data, (int) $slide->slideshow, false);
     $DB->update_record('slideshow_slide', $record);
 
