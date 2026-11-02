@@ -3,7 +3,7 @@
   <library>
     <location>thirdparty/slip/slip.js</location>
     <name>Slip.js</name>
-    <description>Touch and pointer list swipe/reorder events for DOM lists. Loaded by the AMD module amd/src/slip.js.</description>
+    <description>Touch and pointer list swipe/reorder events for DOM lists. This path links to the AMD module amd/src/slip.js.</description>
     <version>1.0</version>
     <license>BSD</license>
     <licenseversion>2-Clause</licenseversion>
@@ -16,13 +16,13 @@
   <library>
     <location>thirdparty/qrcodejs/qrcode.js</location>
     <name>qrcodejs (QRCode for JavaScript)</name>
-    <description>Cross-browser QR code generator. Loaded by the AMD module amd/src/qrcode.js.</description>
-    <version>0.0.1</version>
+    <description>Cross-browser QR code generator for the enrolment QR code. This path links to the AMD module amd/src/qrcode.js.</description>
+    <version>0.0.1 (master 04f46c6a0708418cb7b96fc563eacae0fbf77674)</version>
     <license>MIT</license>
     <licenseversion></licenseversion>
     <repository>https://github.com/davidshimjs/qrcodejs</repository>
     <copyrights>
-      <copyright>2012 davidshimjs (MIT License)</copyright>
+      <copyright>2012 davidshimjs</copyright>
     </copyrights>
     <customised/>
   </library>
