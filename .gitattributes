@@ -1,4 +1,4 @@
-# Development-only files that must not be part of the installable package (git archive).
+# Development files are kept out of the release package built with git archive.
+.git* export-ignore
 .github export-ignore
-.gitattributes export-ignore
-.gitignore export-ignore
+.DS_Store export-ignore
