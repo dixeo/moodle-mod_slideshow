@@ -267,6 +267,39 @@ function slideshow_prepare_slide_save_record(
     return $record;
 }
 
+/**
+ * Build a new slideshow_slide row from untrusted input (generation, backup restore, add_instance).
+ *
+ * Only whitelisted columns are copied. The name is cleaned as PARAM_TEXT, the content with
+ * slideshow_sanitize_slide_content(), the content format is limited to format_text_menu() (default
+ * FORMAT_HTML) and the layout goes through slideshow_normalize_layout(). Title only always shows the
+ * title, so its hide flag is forced to 0.
+ *
+ * @param int $slideshowid Owning instance id.
+ * @param array $slidedata name, content, contentformat, layout, hidetitle, hidden.
+ * @param int $sortorder Position.
+ * @return stdClass Row ready for insert_record().
+ */
+function slideshow_build_new_slide_record(int $slideshowid, array $slidedata, int $sortorder): stdClass {
+    $format = clean_param($slidedata['contentformat'] ?? FORMAT_HTML, PARAM_INT);
+    if (!array_key_exists($format, format_text_menu())) {
+        $format = (int) FORMAT_HTML;
+    }
+    $layout = slideshow_normalize_layout(isset($slidedata['layout']) ? (string) $slidedata['layout'] : null);
+
+    return (object) [
+        'slideshow' => $slideshowid,
+        'name' => clean_param((string) ($slidedata['name'] ?? ''), PARAM_TEXT),
+        'hidetitle' => ($layout === MOD_SLIDESHOW_LAYOUT_TITLEONLY || empty($slidedata['hidetitle'])) ? 0 : 1,
+        'content' => slideshow_sanitize_slide_content((string) ($slidedata['content'] ?? ''), $format),
+        'contentformat' => $format,
+        'layout' => $layout,
+        'hidden' => empty($slidedata['hidden']) ? 0 : 1,
+        'sortorder' => $sortorder,
+        'timemodified' => time(),
+    ];
+}
+
 /** @var string Slide shows a centered title and no body or image. */
 define('MOD_SLIDESHOW_LAYOUT_TITLEONLY', 'titleonly');
 

@@ -90,27 +90,16 @@ class restore_slideshow_activity_structure_step extends restore_activity_structu
         $oldid = $data->id;
         unset($data->id);
 
-        $data->slideshow = $this->get_new_parentid('slideshow');
-        $data->timemodified = $this->apply_date_offset($data->timemodified);
-        if (!property_exists($data, 'hidetitle')) {
-            $data->hidetitle = 0;
-        }
-
         // Backup files are untrusted. Clean and type every column like the in-plugin save paths do.
         require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
-        $format = (int) ($data->contentformat ?? FORMAT_HTML);
-        if (!array_key_exists($format, format_text_menu())) {
-            $format = FORMAT_HTML;
-        }
-        $data->contentformat = $format;
-        $data->content = slideshow_sanitize_slide_content((string) ($data->content ?? ''), $format);
-        $data->name = clean_param((string) ($data->name ?? ''), PARAM_TEXT);
-        $data->hidetitle = empty($data->hidetitle) ? 0 : 1;
-        $data->hidden = empty($data->hidden) ? 0 : 1;
-        $data->sortorder = (int) ($data->sortorder ?? 0);
-        $data->layout = slideshow_normalize_layout(isset($data->layout) ? (string) $data->layout : null);
+        $record = slideshow_build_new_slide_record(
+            (int) $this->get_new_parentid('slideshow'),
+            (array) $data,
+            (int) ($data->sortorder ?? 0)
+        );
+        $record->timemodified = $this->apply_date_offset($data->timemodified ?? 0);
 
-        $newitemid = $DB->insert_record('slideshow_slide', $data);
+        $newitemid = $DB->insert_record('slideshow_slide', $record);
         $this->set_mapping('slideshow_slide', $oldid, $newitemid, true);
     }
 

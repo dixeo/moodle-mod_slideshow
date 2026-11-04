@@ -121,22 +121,7 @@ function slideshow_add_instance($data, $mform = null) {
         require_once($CFG->dirroot . '/mod/slideshow/locallib.php');
         $sortorder = 0;
         foreach ($data->slides as $slidedata) {
-            $slidedata = (array) $slidedata;
-            $format = clean_param($slidedata['contentformat'] ?? FORMAT_HTML, PARAM_INT);
-            if (!array_key_exists($format, format_text_menu())) {
-                $format = FORMAT_HTML;
-            }
-            $record = (object) [
-                'slideshow' => $data->id,
-                'name' => clean_param((string) ($slidedata['name'] ?? ''), PARAM_TEXT),
-                'hidetitle' => empty($slidedata['hidetitle']) ? 0 : 1,
-                'content' => slideshow_sanitize_slide_content((string) ($slidedata['content'] ?? ''), $format),
-                'contentformat' => $format,
-                'layout' => slideshow_normalize_layout(isset($slidedata['layout']) ? (string) $slidedata['layout'] : null),
-                'hidden' => empty($slidedata['hidden']) ? 0 : 1,
-                'sortorder' => $sortorder++,
-                'timemodified' => time(),
-            ];
+            $record = slideshow_build_new_slide_record((int) $data->id, (array) $slidedata, $sortorder++);
             $DB->insert_record('slideshow_slide', $record);
         }
     }
