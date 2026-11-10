@@ -518,7 +518,7 @@ function slideshow_render_featured_image_editor(\context $context, \stored_file 
     $label = get_string('editimage', 'filter_dixeo_imageeditor');
     $button = html_writer::tag('button', $label, [
         'type' => 'button',
-        'class' => 'btn btn-sm dixeo-imageeditor-editbtn',
+        'class' => 'dixeo-imageeditor-editbtn',
         'data-action' => 'open-editor',
         'aria-label' => $label,
     ]);
