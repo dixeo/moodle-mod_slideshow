@@ -32,6 +32,7 @@ $string['decrease'] = 'Riduci dimensione testo';
 $string['delete'] = 'Elimina diapositiva';
 $string['deleteconfirm'] = 'Sei sicuro di voler eliminare questa diapositiva?';
 $string['edit'] = 'Modifica diapositiva';
+$string['error_connection'] = 'La connessione al server è stata persa. Controlla la rete e riprova.';
 $string['errorcontainernotfound'] = 'Contenitore della presentazione non trovato.';
 $string['eventslidecreated'] = 'Diapositiva creata';
 $string['eventslidedeleted'] = 'Diapositiva eliminata';

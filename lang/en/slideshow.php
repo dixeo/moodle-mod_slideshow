@@ -32,6 +32,7 @@ $string['decrease'] = 'Make text smaller';
 $string['delete'] = 'Delete slide';
 $string['deleteconfirm'] = 'Are you sure you want to delete this slide?';
 $string['edit'] = 'Edit slide';
+$string['error_connection'] = 'The connection to the server was lost. Check your network and try again.';
 $string['errorcontainernotfound'] = 'Slideshow container not found.';
 $string['eventslidecreated'] = 'Slide created';
 $string['eventslidedeleted'] = 'Slide deleted';

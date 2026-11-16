@@ -22,14 +22,66 @@
  */
 
 define([
-    'core/ajax',
+    'jquery',
     'core/fragment',
     'core/modal_events',
     'core/modal_save_cancel',
-    'core/notification',
     'core/str',
-], function(Ajax, Fragment, ModalEvents, ModalSaveCancel, Notification, Str) {
+    'mod_slideshow/network',
+], function($, Fragment, ModalEvents, ModalSaveCancel, Str, Network) {
     let saving = false;
+
+    const connection = Network.forComponent({component: 'mod_slideshow'});
+
+    /**
+     * Load a fragment as a native promise resolving to {html, js}.
+     *
+     * @param {string} name Fragment callback name.
+     * @param {Number} contextid Context id.
+     * @param {Object} params Fragment parameters.
+     * @returns {Promise<{html: string, js: string}>}
+     */
+    const loadFragment = (name, contextid, params) => new Promise((resolve, reject) => {
+        Fragment.loadFragment('mod_slideshow', name, contextid, params)
+            .done((html, js) => resolve({html: html, js: js}))
+            .fail(reject);
+    });
+
+    /**
+     * Load the quick edit form, retrying through short connection losses.
+     *
+     * A lost connection is shown with the connection dialog. The body promise
+     * still resolves, with empty markup, because rejecting it makes the modal
+     * open Moodle's exception dialogue as well. The caller removes that empty
+     * editor when editor.lost is set.
+     *
+     * @param {Object} options cmid, contextid and slideid
+     * @param {{modal: Object|null, lost: boolean}} editor Editor modal, once it exists
+     * @returns {Object} jQuery promise resolved with the html and js, as modal bodies expect.
+     */
+    const loadQuickEditBody = (options, editor) => {
+        const deferred = $.Deferred();
+        Network.retryRead(() => loadFragment('quickedit', options.contextid, {
+            cmid: String(options.cmid),
+            slideid: String(options.slideid),
+        })).then(({html, js}) => {
+            deferred.resolve(html, js);
+            return undefined;
+        }).catch((failure) => {
+            if (Network.isConnectionError(failure)) {
+                editor.lost = true;
+                if (editor.modal) {
+                    editor.modal.getRoot().removeClass('show').addClass('hide');
+                }
+                connection.notifyConnection();
+                deferred.resolve('', '');
+                return undefined;
+            }
+            deferred.reject(failure);
+            return undefined;
+        });
+        return deferred.promise();
+    };
 
     /**
      * Show server-side field errors inside the modal.
@@ -319,7 +371,8 @@ define([
         const contentformat = form.elements['content_editor[format]'];
         const contentitem = form.elements['content_editor[itemid]'];
         const dixeo = readDixeoArgs(body);
-        const request = Ajax.call([{
+        // Sent once: a lost save is reported and the modal keeps the user's input.
+        const request = Network.call({
             methodname: 'mod_slideshow_save_slide',
             args: {
                 cmid: Number(form.elements.cmid.value),
@@ -338,7 +391,7 @@ define([
                 editorsessionid: dixeo ? dixeo.editorsessionid : 0,
                 hidetitle: hideTitleValue(form),
             },
-        }])[0];
+        }, {timeout: Network.TIMEOUT_ACTION_MS});
         request.then((payload) => {
             saving = false;
             if (payload.errors.length) {
@@ -358,7 +411,7 @@ define([
             return;
         }).catch((error) => {
             saving = false;
-            Notification.exception(error);
+            connection.exception(error);
             return;
         });
     }
@@ -375,20 +428,23 @@ define([
          */
         open: function(options) {
             const state = {saved: false};
+            const editor = {modal: null, lost: false};
             releaseDetachedEditors();
             Str.get_string('edit', 'slideshow').then((title) => {
                 return ModalSaveCancel.create({
                     title: title,
-                    body: Fragment.loadFragment('mod_slideshow', 'quickedit', options.contextid, {
-                        cmid: String(options.cmid),
-                        slideid: String(options.slideid),
-                    }),
+                    body: loadQuickEditBody(options, editor),
                     large: true,
                     show: true,
                     removeOnClose: true,
                 });
             }).then((modal) => {
+                editor.modal = modal;
                 modal.getRoot().on(ModalEvents.bodyRendered, () => {
+                    if (editor.lost) {
+                        closeModal(modal);
+                        return;
+                    }
                     initDixeoEditor(modal);
                     syncLayoutExtras(modal);
                 });
@@ -423,7 +479,7 @@ define([
                 initDixeoEditor(modal);
                 syncLayoutExtras(modal);
                 return modal;
-            }).catch(Notification.exception);
+            }).catch(connection.exception);
         },
     };
 });

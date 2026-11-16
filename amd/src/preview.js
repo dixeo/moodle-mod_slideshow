@@ -28,7 +28,22 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-define(['core/fragment', 'core/templates'], function(Fragment, Templates) {
+define(['core/fragment', 'core/templates', 'mod_slideshow/network'], function(Fragment, Templates, Network) {
+
+    /**
+     * Load a fragment as a native promise resolving to {html, js}.
+     *
+     * @param {string} name Fragment callback name.
+     * @param {Number} contextid Context id.
+     * @param {Object} params Fragment parameters.
+     * @returns {Promise<{html: string, js: string}>}
+     */
+    const loadFragment = (name, contextid, params) => new Promise((resolve, reject) => {
+        Fragment.loadFragment('mod_slideshow', name, contextid, params)
+            .done((html, js) => resolve({html: html, js: js}))
+            .fail(reject);
+    });
+
 
     /** @var {string} Layout that shows only the title. */
     const LAYOUT_TITLEONLY = 'titleonly';
@@ -200,10 +215,12 @@ define(['core/fragment', 'core/templates'], function(Fragment, Templates) {
         }
         bodyRequest = bodyRequest + 1;
         const request = bodyRequest;
-        Fragment.loadFragment('mod_slideshow', 'preview', previewContextId, {
+        Network.retryRead(() => loadFragment('preview', previewContextId, {
             content: content,
             format: format,
-        }).then((html, js) => {
+        }), {
+            isCancelled: () => request !== bodyRequest,
+        }).then(({html, js}) => {
             if (request !== bodyRequest) {
                 return;
             }

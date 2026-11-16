@@ -32,6 +32,7 @@ $string['decrease'] = 'Text verkleinern';
 $string['delete'] = 'Folie löschen';
 $string['deleteconfirm'] = 'Möchten Sie diese Folie wirklich löschen?';
 $string['edit'] = 'Folie bearbeiten';
+$string['error_connection'] = 'Die Verbindung zum Server wurde unterbrochen. Prüfen Sie Ihr Netzwerk und versuchen Sie es erneut.';
 $string['errorcontainernotfound'] = 'Slideshow-Container nicht gefunden.';
 $string['eventslidecreated'] = 'Folie erstellt';
 $string['eventslidedeleted'] = 'Folie gelöscht';

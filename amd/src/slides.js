@@ -23,12 +23,35 @@
 
 define([
     'core/config',
-    'core/ajax',
     'core/modal_save_cancel',
     'core/modal_events',
     'core/str',
     'mod_slideshow/slip',
-], function(Config, Ajax, ModalSaveCancel, ModalEvents, str, Slip) {
+    'mod_slideshow/network',
+], function(Config, ModalSaveCancel, ModalEvents, str, Slip, Network) {
+    const connection = Network.forComponent({component: 'mod_slideshow'});
+
+    /**
+     * Send one slide change. It is never sent again automatically.
+     *
+     * @param {string} methodname
+     * @param {Object} args
+     * @returns {Promise}
+     */
+    const callAction = (methodname, args) => Network.call({methodname: methodname, args: args},
+        {timeout: Network.TIMEOUT_ACTION_MS});
+
+    /**
+     * Report a lost connection; server errors stay silent.
+     *
+     * @param {*} failure
+     */
+    const reportConnectionLoss = (failure) => {
+        if (Network.isConnectionError(failure)) {
+            connection.notifyConnection();
+        }
+    };
+
     return {
         init: (slideshow, contextid) => {
             var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
@@ -166,17 +189,15 @@ define([
             let changeSortOrder = (slideid, neworder) => {
                 var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
 
-                return Ajax.call([{
-                    methodname: 'mod_slideshow_reorder_slide',
-                    args: {
-                        slideid: slideid,
-                        neworder: neworder,
-                    },
-                }])[0].then(function() {
+                return callAction('mod_slideshow_reorder_slide', {
+                    slideid: slideid,
+                    neworder: neworder,
+                }).then(function() {
                     updateSortorderUI(ul);
                     return;
-                }).catch(function() {
+                }).catch(function(failure) {
                     // Request failed; list order may be stale until refresh.
+                    reportConnectionLoss(failure);
                     return;
                 });
             };
@@ -204,13 +225,10 @@ define([
             let hideShowSlide = (slideid, action) => {
                 var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
 
-                return Ajax.call([{
-                    methodname: 'mod_slideshow_set_slide_visibility',
-                    args: {
-                        slideid: slideid,
-                        action: action,
-                    },
-                }])[0].then(function(response) {
+                return callAction('mod_slideshow_set_slide_visibility', {
+                    slideid: slideid,
+                    action: action,
+                }).then(function(response) {
                     let slide = ul.querySelector('.slide-item[data-id="' + slideid + '"]');
                     let hide = slide.querySelector('.actions .hide');
                     let show = slide.querySelector('.actions .show');
@@ -223,8 +241,8 @@ define([
                         show.classList.remove('hidden');
                     }
                     return;
-                }).catch(function() {
-                    // Request failed.
+                }).catch(function(failure) {
+                    reportConnectionLoss(failure);
                     return;
                 });
             };
@@ -265,20 +283,17 @@ define([
             let deleteSlide = (slideid) => {
                 var ul = document.querySelector('#slide-list[data-cmid="' + slideshow + '"]');
 
-                return Ajax.call([{
-                    methodname: 'mod_slideshow_delete_slide',
-                    args: {
-                        slideid: slideid,
-                    },
-                }])[0].then(function(response) {
+                return callAction('mod_slideshow_delete_slide', {
+                    slideid: slideid,
+                }).then(function(response) {
                     if (response.result) {
                         let slide = ul.querySelector('.slide-item[data-id="' + slideid + '"]');
                         slide.remove();
                         updateSortorderUI(ul);
                     }
                     return;
-                }).catch(function() {
-                    // Request failed.
+                }).catch(function(failure) {
+                    reportConnectionLoss(failure);
                     return;
                 });
             };

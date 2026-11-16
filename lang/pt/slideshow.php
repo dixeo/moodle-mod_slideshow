@@ -32,6 +32,7 @@ $string['decrease'] = 'Diminuir texto';
 $string['delete'] = 'Eliminar diapositivo';
 $string['deleteconfirm'] = 'Tem a certeza de que deseja eliminar este diapositivo?';
 $string['edit'] = 'Editar diapositivo';
+$string['error_connection'] = 'A ligação ao servidor foi perdida. Verifique a sua rede e tente novamente.';
 $string['errorcontainernotfound'] = 'Contentor da apresentação não encontrado.';
 $string['eventslidecreated'] = 'Diapositivo criado';
 $string['eventslidedeleted'] = 'Diapositivo eliminado';
